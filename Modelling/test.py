@@ -1,22 +1,8 @@
-from enum import Enum
 import random as r
 import matplotlib.pyplot as plt
 import numpy as np
-
-class Err(Enum):
-    OK = 0
-    GenericNonFatalError = -1
-    GenericFatalError = 1
-    RangeError = 2
-
-def ShowError(err):
-    errorCodes = {
-        0: "OK",
-        -1: "Generic Non-Fatal Error",
-        1: "Generic Fatal Error",
-        2: "Range Error"
-    }
-    return errorCodes[err]
+import math
+from err import Err
 
 xmin = 0.0
 xmax = 1.0
@@ -46,15 +32,26 @@ for i in range(numIterations):
     x = r.random()
     y, err = ProbDensityFunc(x)
     if (err != Err.OK):
-        print(ShowError(err) + " in pdf (iteration: " + i + ")")
+        print(Err.ShowError(err), " in pdf (iteration: ", i, ")")
         if (err > 0): # Error is fatal, skip iteration
             continue
     y, err = Model(x)
     if (err != Err.OK):
-        print(ShowError(err) + " in model (iteration: " + i + ")")
+        print(Err.ShowError(err), " in model (iteration: ", i, ")")
         if (err > 0): # Error is fatal, skip iteration
             continue
     results[i] = np.array((x, y))
+
+#calculate average analytically:
+a_avg = 1/math.log(2, math.e)
+
+#calculate average from MC
+mc_avg = sum(results[:,1]) / numIterations
+error = abs(a_avg - mc_avg) / a_avg
+
+print("Analytical average = ", a_avg)
+print("MC average = ", mc_avg)
+print("Error = ", error)
 
 fig, ax = plt.subplots()
 ax.scatter(results[:,0], results[:,1])
