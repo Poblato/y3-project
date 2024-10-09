@@ -13,7 +13,7 @@ def ProbDensityFunc(x):
     if ((x < xmin) | (x > xmax)):
         return {0, Err.RangeError}
     #Uniform
-    return {1, Err.OK}
+    return {x, Err.OK}
 
 def Model(x):
     #Ensure Input is in range
@@ -23,26 +23,27 @@ def Model(x):
     # For now an exponential
     return {2 ** x, Err.OK}
 
-# Set seed for debugging
+# Set seed
 r.seed(2, 100)
 
 results = np.zeros((numIterations, 2))
 
 for i in range(numIterations):
     x = r.random()
-    y, err = ProbDensityFunc(x)
+    x, err = ProbDensityFunc(x)
     if (err != Err.OK):
         print(Err.ShowError(err), " in pdf (iteration: ", i, ")")
         if (err > 0): # Error is fatal, skip iteration
             continue
     y, err = Model(x)
+    print(err)
     if (err != Err.OK):
         print(Err.ShowError(err), " in model (iteration: ", i, ")")
         if (err > 0): # Error is fatal, skip iteration
             continue
     results[i] = np.array((x, y))
 
-#calculate average analytically:
+#calculate average analytically (for exponential):
 a_avg = 1/math.log(2, math.e)
 
 #calculate average from MC
