@@ -1,41 +1,25 @@
 import random as r
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.special
 from err import Err
 from scipy import constants
-import scipy
 
 def Shadowing(power, stdDev):
-    areaMeanPower = 4.3429 * np.log(power)
-    # print(areaMeanPower.size())
-    # dist = scipy.stats.lognorm(s = stdDev, loc=areaMeanPower.reshape(areaMeanPower.size()), scale=4.3429)
-    # foo = dist.rvs(size=power.size())
-    # np.reshape(foo, areaMeanPower.shape())
-
+    areaMeanPower = 10/np.log(10) * np.log(power)
     rand = np.random.normal(areaMeanPower, stdDev, areaMeanPower.shape)
+    return np.exp(rand / (10/np.log(10)))
 
-    # # Shadowing
-    # # Area mean of the CIR
-    # mu_gamma_d_minus = xi * np.log((((R * (R_u - 1)) / r_corners) ** a) * ((g + (R_u - 1) * R) / (g + r_corners)) ** b) - xi*np.log(N_I) + (variance_SI-(sigma_I**2))/(2*xi)
-    # # Log-normally distributing the CIR
-    # norm_gamma_d_minus_shadowing = np.random.normal(mu_gamma_d_minus, sigma_gamma_d, iterations)
-    # gamma_d_minus_shadowing = np.exp(norm_gamma_d_minus_shadowing / xi)
-
-    # # Averaging the ASE over all values of r
-    # ASE_shadowing_minus[i] = (4 / (np.pi * (R_u ** 2) * (R ** 2))) * (R - R_o) * np.mean(np.log2(1+gamma_d_minus_shadowing) * p_r) * 1_000_000
-
-    y = constants.e ** (rand / 4.3429)
-
-    return y
-
-def MultipathFading(power, scale):
-    foo = np.random.gamma(scale, power/scale, power.shape)
+def MultipathFading(power, m):
+    foo = np.random.gamma(m, power/m, power.shape)
     return foo
 
 np.random.seed(100)
 
-N = 10_000
+N = 100_000
+
+# https://erdc-library.erdc.dren.mil/server/api/core/bitstreams/8eca351f-51ec-46ae-8b30-60c7f3b2465e/content
+# for 972 MHz in urban environments
+thermalNoise = 1e-14
 
 numInterferers = 6
 minDist = 20
@@ -64,13 +48,15 @@ angles = np.zeros((numInterferers, N))
 powerReceived = np.zeros((numInterferers, N))
 interfererDists = np.zeros((numInterferers, N))
 aseSamples = np.zeros(N)
+rateSamples = np.zeros(N)
 
 normReuseDists = np.arange(2, 11, 1) # from 2 to 10 inclusive
-ases = np.zeros(normReuseDists.size)
+ases = np.zeros((4, normReuseDists.size))
+rates = np.zeros((4, normReuseDists.size))
+outages = np.zeros((4, normReuseDists.size))
+outageThreshold = 2
 
-points = np.zeros((3, normReuseDists.size))
-
-for i in range(3):
+for i in range(4):
     # additionalPathLossExponent = 2 * (i + 1) # 2, 4, 6
     additionalPathLossExponent = 2
     m_D = 1 * (i + 1) # 1, 2, 3
@@ -88,22 +74,61 @@ for i in range(3):
         powerReceived = 1 / ((interfererDists**pathLossExponent) * ((1 + interfererDists/g)**additionalPathLossExponent))
 
         # Shadowing
-        # userPowers = Shadowing(userPowers, userSD)
-        # powerReceived = Shadowing(powerReceived, interfererSD)
+        # if (i > 0):
+        #     userPowers = Shadowing(userPowers, userSD)
+        #     powerReceived = Shadowing(powerReceived, interfererSD)
 
         # Multipath fading
-        userPowers = MultipathFading(userPowers, m_D)
-        powerReceived = MultipathFading(powerReceived, m_I)
+        if (i > 0):
+            userPowers = MultipathFading(userPowers, m_D)
+            powerReceived = MultipathFading(powerReceived, m_I)
 
         #interferer inactivity
-        # powerReceived *= np.random.random((numInterferers, N)) > activity
+        interfererActivity = 1.0
+        activityArray = np.zeros((numInterferers, N)) + interfererActivity
+        powerReceived *= np.random.random((numInterferers, N)) < activityArray
 
-        cirs = userPowers / sum(powerReceived)
+        cirs = userPowers / (thermalNoise + sum(powerReceived))
         aseSamples = (4 * np.log2(1 + cirs)) / (np.pi * (normReuseDists[x]**2) * (cellRadius**2))
-        ases[x] = np.mean(aseSamples) * 1_000_000
-    points[i] = ases
+        rateSamples = (4 * np.log2(1 + cirs))
+        ases[i][x] = np.mean(aseSamples) * 1_000_000
+        rates[i][x] = np.mean(rateSamples) * 1_000_000
+        outages[i][x] = np.sum(cirs < outageThreshold) * 100 / N
 
+# ASE
 plt.figure()
-for i in range(3):
-    plt.plot(normReuseDists, points[i])
+plt.plot(normReuseDists, ases[0], 'ko-', label="No multipath/shadowing", linewidth=0.5, markerfacecolor="none", markersize=6)
+for i in range(1, 4):
+    plt.plot(normReuseDists, ases[i], 'k-', label="m_d=" + str(i) , linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.xlabel("Normalised Reuse Distance Ru")
+plt.ylabel("ASE [Bits/Sec/Hz/Km^2]")
+plt.xlim([2, 10])
+plt.legend()
+plt.tick_params(axis='both', direction='in', length=6)
+plt.grid(True, linestyle='--')
+
+# Rate
+plt.figure()
+plt.plot(normReuseDists, rates[0], 'ko-', label="No multipath/shadowing", linewidth=0.5, markerfacecolor="none", markersize=6)
+for i in range(1, 4):
+    plt.plot(normReuseDists, rates[i], 'k-', label="m_d=" + str(i) , linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.xlabel("Normalised Reuse Distance Ru")
+plt.ylabel("Rate [Bits/Sec/Hz]")
+plt.xlim([2, 10])
+plt.legend()
+plt.tick_params(axis='both', direction='in', length=6)
+plt.grid(True, linestyle='--')
+
+# Outage
+plt.figure()
+plt.plot(normReuseDists, outages[0], 'ko-', label="No multipath/shadowing", linewidth=0.5, markerfacecolor="none", markersize=6)
+for i in range(1, 4):
+    plt.plot(normReuseDists, outages[i], 'k-', label="m_d=" + str(i) , linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.xlabel("Normalised Reuse Distance Ru")
+plt.ylabel("Outage [%]")
+plt.xlim([2, 10])
+plt.legend()
+plt.tick_params(axis='both', direction='in', length=6)
+plt.grid(True, linestyle='--')
+
 plt.show()
