@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from err import Err
 from scipy import constants
+import scipy
 
 def Shadowing(power, stdDev):
     areaMeanPower = 10/np.log(10) * np.log(power)
@@ -10,12 +11,12 @@ def Shadowing(power, stdDev):
     return np.exp(rand / (10/np.log(10)))
 
 def MultipathFading(power, m):
-    foo = np.random.gamma(m, power/m, power.shape)
-    return foo
+    return np.random.gamma(m, power/m, power.shape)
 
 np.random.seed(100)
 
 N = 100_000
+numPlots = 3
 
 # https://erdc-library.erdc.dren.mil/server/api/core/bitstreams/8eca351f-51ec-46ae-8b30-60c7f3b2465e/content
 # for 972 MHz in urban environments
@@ -34,8 +35,8 @@ carrierWavelength = constants.c / carrierFrequency
 g = (4*bsAntennaH*userAntennaH) / carrierWavelength
 
 # shadowing constants
-userSD = 4
-interfererSD = 4
+userSD = 6
+interfererSD = 6
 # multipath fading constants
 m_D = 1
 m_I = 1
@@ -51,15 +52,15 @@ aseSamples = np.zeros(N)
 rateSamples = np.zeros(N)
 
 normReuseDists = np.arange(2, 11, 1) # from 2 to 10 inclusive
-ases = np.zeros((4, normReuseDists.size))
-rates = np.zeros((4, normReuseDists.size))
-outages = np.zeros((4, normReuseDists.size))
+ases = np.zeros((numPlots, normReuseDists.size))
+rates = np.zeros((numPlots, normReuseDists.size))
+outages = np.zeros((numPlots, normReuseDists.size))
 outageThreshold = 2
 
-for i in range(4):
+for i in range(numPlots):
     # additionalPathLossExponent = 2 * (i + 1) # 2, 4, 6
     additionalPathLossExponent = 2
-    m_D = 1 * (i + 1) # 1, 2, 3
+    m_D = 2 * i - 1 # 1, 3
     for x in range(normReuseDists.size):
         reuseDist = normReuseDists[x] * cellRadius
 
@@ -74,9 +75,9 @@ for i in range(4):
         powerReceived = 1 / ((interfererDists**pathLossExponent) * ((1 + interfererDists/g)**additionalPathLossExponent))
 
         # Shadowing
-        # if (i > 0):
-        #     userPowers = Shadowing(userPowers, userSD)
-        #     powerReceived = Shadowing(powerReceived, interfererSD)
+        if (i > 0):
+            userPowers = Shadowing(userPowers, userSD)
+            powerReceived = Shadowing(powerReceived, interfererSD)
 
         # Multipath fading
         if (i > 0):
@@ -89,8 +90,8 @@ for i in range(4):
         powerReceived *= np.random.random((numInterferers, N)) < activityArray
 
         cirs = userPowers / (thermalNoise + sum(powerReceived))
-        aseSamples = (4 * np.log2(1 + cirs)) / (np.pi * (normReuseDists[x]**2) * (cellRadius**2))
         rateSamples = (4 * np.log2(1 + cirs))
+        aseSamples = rateSamples / (np.pi * (normReuseDists[x]**2) * (cellRadius**2))
         ases[i][x] = np.mean(aseSamples) * 1_000_000
         rates[i][x] = np.mean(rateSamples) * 1_000_000
         outages[i][x] = np.sum(cirs < outageThreshold) * 100 / N
@@ -98,8 +99,8 @@ for i in range(4):
 # ASE
 plt.figure()
 plt.plot(normReuseDists, ases[0], 'ko-', label="No multipath/shadowing", linewidth=0.5, markerfacecolor="none", markersize=6)
-for i in range(1, 4):
-    plt.plot(normReuseDists, ases[i], 'k-', label="m_d=" + str(i) , linewidth=0.5, markerfacecolor="none", markersize=6)
+for i in range(1, numPlots):
+    plt.plot(normReuseDists, ases[i], 'k-', label="m_d=" + str(2 * i - 1) , linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Normalised Reuse Distance Ru")
 plt.ylabel("ASE [Bits/Sec/Hz/Km^2]")
 plt.xlim([2, 10])
@@ -110,8 +111,8 @@ plt.grid(True, linestyle='--')
 # Rate
 plt.figure()
 plt.plot(normReuseDists, rates[0], 'ko-', label="No multipath/shadowing", linewidth=0.5, markerfacecolor="none", markersize=6)
-for i in range(1, 4):
-    plt.plot(normReuseDists, rates[i], 'k-', label="m_d=" + str(i) , linewidth=0.5, markerfacecolor="none", markersize=6)
+for i in range(1, numPlots):
+    plt.plot(normReuseDists, rates[i], 'k-', label="m_d=" + str(2 * i - 1) , linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Normalised Reuse Distance Ru")
 plt.ylabel("Rate [Bits/Sec/Hz]")
 plt.xlim([2, 10])
@@ -122,8 +123,8 @@ plt.grid(True, linestyle='--')
 # Outage
 plt.figure()
 plt.plot(normReuseDists, outages[0], 'ko-', label="No multipath/shadowing", linewidth=0.5, markerfacecolor="none", markersize=6)
-for i in range(1, 4):
-    plt.plot(normReuseDists, outages[i], 'k-', label="m_d=" + str(i) , linewidth=0.5, markerfacecolor="none", markersize=6)
+for i in range(1, numPlots):
+    plt.plot(normReuseDists, outages[i], 'k-', label="m_d=" + str(2 * i - 1) , linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Normalised Reuse Distance Ru")
 plt.ylabel("Outage [%]")
 plt.xlim([2, 10])
