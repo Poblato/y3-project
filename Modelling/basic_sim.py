@@ -1,7 +1,5 @@
-import random as r
 import matplotlib.pyplot as plt
 import numpy as np
-from err import Err
 from scipy import constants
 import scipy
 
@@ -41,9 +39,6 @@ interfererSD = 6
 m_D = 1
 m_I = 1
 
-# Interferer inactivity
-activity = 0.8 # 80% chance to be active
-
 interfererPos = np.zeros((numInterferers, N))
 angles = np.zeros((numInterferers, N))
 powerReceived = np.zeros((numInterferers, N))
@@ -55,7 +50,7 @@ normReuseDists = np.arange(2, 11, 1) # from 2 to 10 inclusive
 ases = np.zeros((numPlots, normReuseDists.size))
 rates = np.zeros((numPlots, normReuseDists.size))
 outages = np.zeros((numPlots, normReuseDists.size))
-outageThreshold = 2
+outageThreshold = 1.2
 
 for i in range(numPlots):
     # additionalPathLossExponent = 2 * (i + 1) # 2, 4, 6
@@ -85,7 +80,7 @@ for i in range(numPlots):
             powerReceived = MultipathFading(powerReceived, m_I)
 
         #interferer inactivity
-        interfererActivity = 1.0
+        interfererActivity = 0.75
         activityArray = np.zeros((numInterferers, N)) + interfererActivity
         powerReceived *= np.random.random((numInterferers, N)) < activityArray
 

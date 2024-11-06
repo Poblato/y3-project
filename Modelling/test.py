@@ -2,7 +2,6 @@ import random as r
 import matplotlib.pyplot as plt
 import numpy as np
 import math
-from err import Err
 
 xmin = 0.0
 xmax = 1.0
@@ -11,17 +10,17 @@ numIterations = 1000
 def ProbDensityFunc(x):
     #Ensure Input is in range
     if ((x < xmin) | (x > xmax)):
-        return {0, Err.RangeError}
+        return 0
     #Uniform
-    return {x, Err.OK}
+    return x
 
 def Model(x):
     #Ensure Input is in range
     if ((x < xmin) | (x > xmax)):
-        return {0, Err.RangeError}
+        return 0
     
     # For now an exponential
-    return {2 ** x, Err.OK}
+    return 2 ** x
 
 # Set seed
 r.seed(2, 100)
@@ -30,17 +29,8 @@ results = np.zeros((numIterations, 2))
 
 for i in range(numIterations):
     x = r.random()
-    x, err = ProbDensityFunc(x)
-    if (err != Err.OK):
-        print(Err.ShowError(err), " in pdf (iteration: ", i, ")")
-        if (err > 0): # Error is fatal, skip iteration
-            continue
-    y, err = Model(x)
-    print(err)
-    if (err != Err.OK):
-        print(Err.ShowError(err), " in model (iteration: ", i, ")")
-        if (err > 0): # Error is fatal, skip iteration
-            continue
+    x = ProbDensityFunc(x)
+    y = Model(x)
     results[i] = np.array((x, y))
 
 #calculate average analytically (for exponential):
