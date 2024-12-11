@@ -7,71 +7,6 @@ import scipy
 N = 10_000 # Num iterations
 L = 10 # Time domain samples (size of Delay-Doppler operator matrix)
 
-# CHANNEL PARAMETERS
-# https://erdc-library.erdc.dren.mil/server/api/core/bitstreams/8eca351f-51ec-46ae-8b30-60c7f3b2465e/content
-# for 972 MHz in urban environments
-thermalNoise = 1e-14
-downSlowFading = 0.6
-upSlowFading = 0.6
-# Proportion of signal power that is transmitted via LOS path
-downLosProportion = 0.6
-upLosProportion = 0.6
-
-# ANTENNA PARAMETERS
-# Transmit antennas
-Nt = 4
-# Receive antennas
-Nr = 4
-# Uplink User antennas
-Nu = 4
-# Downlink User antennas
-Nd = 4
-
-def ThermalNoise(shape):
-    return np.random.normal(0, thermalNoise, shape)
-
-def RicianFading(power, losProportion, shape):
-    v = np.sqrt((losProportion / (1 + losProportion)) * power)
-    sig = np.sqrt(power / (2 * (1 + losProportion)))
-    # not sure about the b=1
-    return scipy.stats.rice.rvs(b=1, loc=v, scale=sig, size=shape)
-
-def DownlinkChannel(power, shape):
-    # Fast fading
-    power = RicianFading(power, downLosProportion, shape)
-    return power * downSlowFading + ThermalNoise()
-
-def UplinkChannel(power, shape):
-    # Fast fading
-    power = RicianFading(power, upLosProportion, shape)
-    return power * upSlowFading + ThermalNoise()
-
-# Covers the full round trip channel for radar signals
-def RadarChannel(power, shape):
-    power = RicianFading(power, upLosProportion, shape)
-    return power * upSlowFading * downSlowFading + ThermalNoise()
-
-def SelfInterferenceChannel(power, shape):
-    return 0
-
-downlinkPower = 0
-uplinkPower = 0
-radarPower = 0
-
-# positions relative to the BS
-downlinkPos = (0, 0)
-uplinkPos = (0, 0)
-
-# downlinkReceived = DownlinkChannel(downlinkPower)
-
-# uplinkReceived = UplinkChannel(uplinkPower) + RadarChannel(radarPower)
-
-# sensingReceived = RadarChannel()
-
-
-
-
-
 # Parameters
 P_t = 20
 P_r = 10        # Power allocated to radar, equivalent to magnitude of s_r
@@ -100,8 +35,8 @@ for x in range(num_plots): # 0 to 2
             s_r = np.random.randn(L,1) # Radar waveform s(t)
             s_r = s_r / np.linalg.norm(s_r) * np.sqrt(P_r)
 
-            surveillance_noise = np.random.normal(0, sigma_r, (L, 1)) + 1j * np.random.normal(0, sigma_i, (L, 1))
-            direct_noise = np.random.normal(0, sigma_r, (L, 1)) + 1j * np.random.normal(0, sigma_i, (L, 1))
+            surveillance_noise = np.random.normal(0, sigma_r, (L, 1)) + np.random.normal(0, sigma_i, (L, 1)) * 1j
+            direct_noise = np.random.normal(0, sigma_r, (L, 1)) + np.random.normal(0, sigma_i, (L, 1)) * 1j
 
             # received power when there is a target
             x_s_p = np.matrix(surveillance_noise + s_r * gamma_t)
