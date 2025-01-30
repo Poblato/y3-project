@@ -8,7 +8,7 @@ N = 10_000 # Num iterations
 L = 1 # Number of links to target
 NUM_CARS = 10 # Total number of cars
 NUM_POINTS = 8
-NUM_PLOTS = 4
+NUM_PLOTS = 1
 
 target_rcs = 100
 
@@ -18,16 +18,16 @@ Ncr = 8 # Comms Receive antennas
 Nst = 8 # Sensing Transmit antennas
 Nsr = 8 # Sensing Receive antennas
 
-tAntennaGain = 10**(8/10)
-rAntennaGain = 10**(8/10)
+tAntennaGain = 10**(8/10) # 8 dB
+rAntennaGain = 10**(8/10) # 8 dB
 
 # SIGNAL PARAMETERS
 total_power = 16
 comms_power = 4
 sensing_power = 12
 
-comms_snr_th = 10**(20/10)
-radar_snr_th = 10**(20/10)
+comms_snr_th = 10**(20/10) # 20 dB
+radar_snr_th = 10**(20/10) # 20 dB
 
 # MISC PARAMETERS
 desired_pfa = 0.01
@@ -73,30 +73,35 @@ s_noise_power = constants.k * noiseFigure * noiseTemp * r_Bandwidth
 c_Bandwidth = 100_000_000
 # c_noise_power = 10**((-174 + 10*np.log10(c_Bandwidth) + 10)/10)
 
+# R_r_max = np.pow((sensing_power * Nsr * rAntennaGain * tAntennaGain * target_rcs * s_carrier_w**2) / (np.pow(4*constants.pi, 3)*s_noise_power*radar_snr_th), 0.25)
+# R_c_max = np.sqrt((comms_power * Ncr * c_carrier_w**2 * K)/(np.pow(4*constants.pi, 2) * c_noise_power*comms_snr_th*(K+1)))
+# R_max = min(R_r_max, R_c_max, 150) # 150 m unless otherwise required
+R_max = 120
+
 theory = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim = np.zeros((NUM_PLOTS, NUM_POINTS))
-dists = np.zeros((NUM_PLOTS, NUM_POINTS))
+dists = np.arange(R_max / NUM_POINTS, R_max + 1, R_max / NUM_POINTS)
 
 for a in range(NUM_PLOTS):
-    c_noise_power = 10**((-170 + a*20 + 10*np.log10(c_Bandwidth))/10)
-    R_r_max = np.pow((sensing_power * Nsr * rAntennaGain * tAntennaGain * target_rcs * s_carrier_w**2) / (np.pow(4*constants.pi, 3)*s_noise_power*radar_snr_th), 0.25)
-    R_c_max = np.sqrt((comms_power * Ncr * c_carrier_w**2 * K)/(np.pow(4*constants.pi, 2) * c_noise_power*comms_snr_th*(K+1)))
-    R_max = min(R_r_max, R_c_max, 150) # 150 m unless otherwise required
-
-    dists[a] = np.arange(R_max / NUM_POINTS, R_max + 1, R_max / NUM_POINTS)
+    c_noise_power = 10**((-120 + a*10 + 10*np.log10(c_Bandwidth))/10)
 
     for d in range(NUM_POINTS):
-        outage_t = np.zeros(N)
-        outage_count = np.zeros(L)
-
-        link_dist = dists[a][d]
-        # angle = np.random.uniform(-constants.pi/3, constants.pi/3, L)
-        angle = 0
+        outage_t = np.zeros(L, complex)
+        outage_count = 0
 
         for n in range(N):
+            outage_iteration = False
+
+            # Generate geometry
+            link_dists = np.zeros(L)
+            link_angles = np.zeros(L)
+            # link_angles = np.random.uniform(-constants.pi/3, constants.pi/3, L)
+            for i in range(L):
+                link_dists[i] = dists[d]
+            
             for l in range(L): # for each link
                 # Set up sim geometry
-                theta[0] = angle
+                theta[0] = link_angles[l]
                 theta[1:P] = np.random.uniform(-constants.pi/2, constants.pi/2, P - 1)
 
                 phi = -theta
@@ -118,13 +123,25 @@ for a in range(NUM_PLOTS):
                 car_dists = 2 + np.random.random(NUM_CARS - 2) * (R_max-2) # from 2 to R_max
                 z = 0.01
                 jamming = np.sum((z**2*sensing_power*Nsr*tAntennaGain*rAntennaGain*target_rcs*s_carrier_w**2)/((4*constants.pi)**3*car_dists))
-                radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * target_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * (s_noise_power + clutterInterference + jamming) * link_dist**4)
+                radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * target_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * (s_noise_power + clutterInterference + jamming) * link_dists[l]**4)
 
                 rxSensitivity = 0.05
                 angle_error = rxSensitivity / radarSnr
                 f = P_u(Nct, (np.sin(phi[0]) + np.random.normal(0, angle_error)))
                 receiverNoise = (np.random.normal(0, c_noise_power / np.sqrt(2), Nct) + 1j * np.random.normal(0, c_noise_power / np.sqrt(2), Nct)) @ np.identity(Nct)
-                receivedSignal = np.sqrt((comms_power*c_carrier_w**2)/(Nct*(4*constants.pi*link_dist)**2))*H_c @ f * symbol + receiverNoise
+
+                # Comms power optimisation
+                # Y_i = np.zeros(L, complex)
+                # for i in range(L):
+                #     Y_i[i] = P_u(Ncr, np.sin(link_angles[i])).H @ P_u(Ncr, np.sin(phi[i])) @ P_u(Nct, np.sin(theta[i])).H @ P_u(Nct, np.sin(-link_angles[i]))
+                # comms_power_1 = (total_power - (sensing_power * L)*link_dists[l]**2) / (link_dists[l]**2 + Y_i[0]*np.sum(link_dists[1:L]**2 / Y_i[1:L]))
+                # if l == 0:
+                #     comms_power = comms_power_1 
+                # else:
+                #     comms_power = (comms_power_1 * Y_i[1] * link_dists[l]**2) / (link_dists[0]**2 * Y_i[l])
+                
+
+                receivedSignal = np.sqrt((comms_power*c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2))*H_c @ f * symbol + receiverNoise
 
                 r_error = np.random.normal(0, angle_error)
                 omega = P_u(Ncr, (np.sin(phi[0]) + r_error))
@@ -136,16 +153,26 @@ for a in range(NUM_PLOTS):
                 complex_angle = -2*constants.pi*c_carrier_f*relative_velocity*symbol_period*(np.sin(theta[0])+r_error)*time_step/constants.c
                 receivedSignal *= np.cos(complex_angle) + 1j*np.sin(complex_angle)
 
-                comms_snr = (comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*link_dist)**2) * np.abs(omega.H @ H_c @ f)**2 / c_noise_power
-                if(comms_snr < comms_snr_th):
-                    outage_count[l] += 1
+                comms_snr = (comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2) * np.abs(omega.H @ H_c @ f)**2 / c_noise_power
+                if(comms_snr < comms_snr_th and not outage_iteration):
+                    outage_count += 1
+                    outage_iteration = True
 
-                outage_t[n] += (comms_snr_th/comms_snr)
+                exp_omega = P_u(Ncr, (np.sin(phi[0])))
+                exp_f = P_u(Nct, (np.sin(phi[0])))
+                exp_comms_snr = (comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2) * np.abs(exp_omega.H @ H_c @ exp_f)**2 / c_noise_power
+                outage_t[l] += exp_comms_snr
 
-        theory[a][d] = np.mean(1 - np.pow(constants.e, -outage_t))
-        sim[a][d] = outage_count.sum(0) / N
+        outage_t = N/outage_t
+        if (outage_t.imag != 0):
+            print("fuck")
+        theory[a][d] = 1 - np.pow(constants.e, -comms_snr_th * outage_t.sum())
+        sim[a][d] = outage_count / N
 
-print("Theory = ", theory, ", Sim = ", sim)
+print("Theory = ", theory, " Sim = ", sim)
+
+avg_diff = np.mean(np.abs(theory - sim) / sim)
+print("Avg diff = ", avg_diff)
 
 # # RADAR
 # N_d = 10 # direct path scatters
@@ -166,7 +193,7 @@ print("Theory = ", theory, ", Sim = ", sim)
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(dists[i], sim[i], 'ko-', label="Noise = "+str(-170 + i*20) , linewidth=0.5, markerfacecolor="none", markersize=6)
+    plt.plot(dists, sim[i], 'ko-', label="Noise = "+str(-140 + i*10) , linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Link Distance (m)")
 plt.ylabel("Outage")
 plt.yscale('log')

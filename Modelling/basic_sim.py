@@ -85,8 +85,8 @@ for i in range(numPlots):
         powerReceived *= np.random.random((numInterferers, N)) < activityArray
 
         cirs = userPowers / (thermalNoise + sum(powerReceived))
-        rateSamples = (4 * np.log2(1 + cirs))
-        aseSamples = rateSamples / (np.pi * (normReuseDists[x]**2) * (cellRadius**2))
+        rateSamples = np.log2(1 + cirs)
+        aseSamples = 4 * rateSamples / (np.pi * (normReuseDists[x]**2) * (cellRadius**2))
         ases[i][x] = np.mean(aseSamples) * 1_000_000
         rates[i][x] = np.mean(rateSamples) * 1_000_000
         outages[i][x] = np.sum(cirs < outageThreshold) * 100 / N
