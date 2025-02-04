@@ -5,7 +5,7 @@ import scipy
 
 # SIM PARAMETERS
 N = 10_000 # Num iterations
-L = 1 # Number of links to target
+L = 2 # Number of links to target
 NUM_CARS = 10 # Total number of cars
 NUM_POINTS = 8
 NUM_PLOTS = 1
@@ -49,7 +49,7 @@ def RayleighFading(omega, shape):
 def P_u(u, psi):
     arr = np.zeros(u, complex)
     for i in range(u):
-        arr[i] = (np.cos(constants.pi * psi) + 1j*np.sin(constants.pi * psi)) / np.sqrt(u)
+        arr[i] = (np.cos(constants.pi * psi * i) + 1j*np.sin(constants.pi * psi * i)) / (2*np.sqrt(u))
     return np.matrix(arr).transpose()
 
 # COMMS
@@ -83,9 +83,11 @@ sim = np.zeros((NUM_PLOTS, NUM_POINTS))
 dists = np.arange(R_max / NUM_POINTS, R_max + 1, R_max / NUM_POINTS)
 
 for a in range(NUM_PLOTS):
-    c_noise_power = 10**((-120 + a*10 + 10*np.log10(c_Bandwidth))/10)
+    print("Plot ", a+1, "of ", NUM_PLOTS)
+    c_noise_power = 10**((-190 + a*10 + 10*np.log10(c_Bandwidth))/10)
 
     for d in range(NUM_POINTS):
+        print("Point ", d+1, "of ", NUM_POINTS)
         outage_t = np.zeros(L, complex)
         outage_count = 0
 
@@ -139,7 +141,7 @@ for a in range(NUM_PLOTS):
                 #     comms_power = comms_power_1 
                 # else:
                 #     comms_power = (comms_power_1 * Y_i[1] * link_dists[l]**2) / (link_dists[0]**2 * Y_i[l])
-                
+                # print(comms_power)
 
                 receivedSignal = np.sqrt((comms_power*c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2))*H_c @ f * symbol + receiverNoise
 
@@ -163,10 +165,11 @@ for a in range(NUM_PLOTS):
                 exp_comms_snr = (comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2) * np.abs(exp_omega.H @ H_c @ exp_f)**2 / c_noise_power
                 outage_t[l] += exp_comms_snr
 
-        outage_t = N/outage_t
-        if (outage_t.imag != 0):
-            print("fuck")
-        theory[a][d] = 1 - np.pow(constants.e, -comms_snr_th * outage_t.sum())
+        outage_t = N / outage_t
+        temp = -(comms_snr_th * outage_t.sum())
+        if (not(temp.imag == 0)):
+            print("Error: theoretical snr not real")
+        theory[a][d] = (1 - pow(np.e, temp.real))
         sim[a][d] = outage_count / N
 
 print("Theory = ", theory, " Sim = ", sim)
