@@ -8,7 +8,7 @@ N = 200_000 # Num iterations
 L = 3 # Number of links to target
 NUM_CARS = 10 # Total number of cars
 NUM_POINTS = 8
-NUM_PLOTS = 1
+NUM_PLOTS = 4
 
 target_rcs = 100
 
@@ -100,16 +100,20 @@ comms_powers = total_powers - sensing_power
 # print(comms_powers)
 
 theory = np.zeros((NUM_PLOTS, NUM_POINTS))
-sim = np.zeros((NUM_PLOTS, NUM_POINTS))
+sim_outage = np.zeros((NUM_PLOTS, NUM_POINTS))
+sim_snr = np.zeros((NUM_PLOTS, NUM_POINTS))
+
+c_noise_power = 10**(-120/10)
 
 for a in range(NUM_PLOTS):
     print("Plot ", a+1, "of ", NUM_PLOTS)
-    c_noise_power = 10**((-120 - a*10)/10)
+    sensing_power = 2*(a+1)
 
     for d in range(NUM_POINTS):
         print("Point ", d+1, "of ", NUM_POINTS)
         outage_t = np.zeros(L, complex)
         outage_count = 0
+        snr_total = 0
 
         comms_power = comms_powers[d]
 
@@ -164,6 +168,7 @@ for a in range(NUM_PLOTS):
                 receivedSignal *= np.cos(complex_angle) + 1j*np.sin(complex_angle)
 
                 comms_snr = (comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2) * np.abs(omega.H @ H_c @ f)**2 / c_noise_power
+                snr_total += comms_snr
                 if(comms_snr < comms_snr_th and not outage_iteration):
                     outage_count += 1
                     outage_iteration = True
@@ -179,8 +184,13 @@ for a in range(NUM_PLOTS):
         # if (not(temp.imag == 0)):
         #     print("Error: theoretical snr not real")
         # theory[a][d] = (1 - pow(np.e, temp.real))
-        sim[a][d] = outage_count / N
+        sim_outage[a][d] = outage_count / N
+        sim_snr[a][d] = snr_total / N
 
+# Convert to dB
+sim_snr = 20*np.log10(sim_snr)
+print(sim_outage)
+print(sim_snr)
 # print("Theory = ", theory, " Sim = ", sim)
 
 # avg_diff = np.mean(np.abs(theory - sim) / sim)
@@ -203,12 +213,26 @@ for a in range(NUM_PLOTS):
 #     else:
 #         H_s += alpha * P_u(Nst, np.sin(phi)) @ a_t.H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
 
+colours = ["blue", "red", "yellow", "green"]
+
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(sim[i], comms_powers, 'ko-', label="Noise = "+str(-120 - i*10)+" dB" , linewidth=0.5, markerfacecolor="none", markersize=6)
+    plt.plot(sim_outage[i], comms_powers, 'ko-', label="Radar Power = "+str(2*(i+1))+" W" , linewidth=0.5, markerfacecolor=colours[i], markersize=6)
     # plt.plot(theory[i], comms_powers, 'ko--', label="Theory = "+str(-170 + i*10) , linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.ylabel("Comms Power (W)")
 plt.xlabel("Outage")
+plt.xscale('log')
+plt.ylim([0, 10])
+# plt.xlim([0, 12])
+plt.legend()
+plt.tick_params(axis='both', direction='in', length=6)
+plt.grid(True, linestyle='--')
+
+plt.figure()
+for i in range(NUM_PLOTS):
+    plt.plot(sim_snr[i], comms_powers, 'ko-', label="Radar Power = "+str(2*(i+1))+" W" , linewidth=0.5, markerfacecolor=colours[i], markersize=6)
+plt.ylabel("Comms Power (W)")
+plt.xlabel("SNR (dB)")
 plt.xscale('log')
 plt.ylim([0, 10])
 # plt.xlim([0, 12])
