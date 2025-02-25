@@ -4,14 +4,16 @@ from scipy import constants
 import scipy
 
 # SIM PARAMETERS
-N = 300_000 # Num iterations
-L = 3 # Number of links to target
+N = 200_000 # Num iterations
+L = 1 # Number of links to target
 NUM_CARS = 6 # Total number of interferers
 NUM_POINTS = 14
 NUM_PLOTS = 1
 
 target_rcs = 100
-reuse_dist = 35
+vru_rcs = 10
+reuse_dist = 150
+link_dist = 150
 
 # ANTENNA PARAMETERS
 Nct = 8 # Comms Transmit antennas
@@ -67,27 +69,16 @@ R_max = 150
 # dists = np.arange(R_min, R_max, (R_max - R_min) / NUM_POINTS)
 
 # Power variation
-link_dist = 150
-link_angles = np.random.uniform(-constants.pi/3, constants.pi/3, L)
 sensing_powers = np.arange(1, total_power - 1, (total_power - 2) / NUM_POINTS)
 comms_powers = total_power - sensing_powers
-# Comms power optimisation
-# Y_i = np.zeros(L, complex)
-# for i in range(L):
-#     Y_i[i] = P_u(Ncr, np.sin(link_angles[i])).H @ P_u(Ncr, np.sin(theta[i])) @ P_u(Nct, np.sin(theta[i])).H @ P_u(Nct, np.sin(-link_angles[i]))
-# comms_power_1 = (total_power - (sensing_power * L)*link_dist**2) / (link_dist**2 + Y_i[0]*np.sum(link_dist**2 / Y_i[1:L]))
-# if l == 0:
-#     comms_power = comms_power_1 
-# else:
-#     comms_power = (comms_power_1 * Y_i[1] * link_dist**2) / (link_dist**2 * Y_i[l])
-# print(comms_powers)
 
 theory = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_outage = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_snr = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_pd = np.zeros((NUM_PLOTS, NUM_POINTS))
+vru_pd = np.zeros((NUM_PLOTS, NUM_POINTS))
 
-c_noise_power = 10**(-110/10)
+c_noise_power = 10**(-40/10)
 
 for a in range(NUM_PLOTS):
     print("Plot ", a+1, "of ", NUM_PLOTS)
@@ -95,7 +86,8 @@ for a in range(NUM_PLOTS):
     for d in range(NUM_POINTS):
         print("Point ", d+1, "of ", NUM_POINTS)
         outage_t = np.zeros(L, complex)
-        radar_outage_count = 0
+        radar_snr_total = 0
+        vru_snr_total = 0
         outage_count = 0
         snr_total = 0
 
@@ -134,10 +126,12 @@ for a in range(NUM_PLOTS):
                 car_dists = np.zeros(NUM_CARS) + reuse_dist # All dists at reuse_dist (worst case)
                 z = 0.01
                 jamming = np.sum((z**2*sensing_power*Nsr*tAntennaGain*rAntennaGain*target_rcs*s_carrier_w**2)/((4*constants.pi)**3*car_dists**4))
-                radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * target_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * np.abs(np.random.normal(0, s_noise_power + clutterInterference + jamming)) * link_dists[l]**4)
+                radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * target_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * (s_noise_power + clutterInterference + jamming) * link_dists[l]**4)
 
-                if (radarSnr < radar_snr_th):
-                    radar_outage_count += 1
+                vru_radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * vru_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * (s_noise_power + clutterInterference + jamming) * link_dist**4)
+
+                radar_snr_total += radarSnr
+                vru_snr_total += vru_radarSnr
 
                 rxSensitivity = 0.05
                 angle_error = rxSensitivity / radarSnr
@@ -175,13 +169,15 @@ for a in range(NUM_PLOTS):
         # theory[a][d] = (1 - pow(np.e, temp.real))
         sim_outage[a][d] = outage_count / N
         sim_snr[a][d] = snr_total / N
-        sim_pd[a][d] = 1 - (radar_outage_count / N)
+        sim_pd[a][d] = np.pow(np.e, -(radar_snr_th * (N*L)) / radar_snr_total)
+        vru_pd[a][d] = np.pow(np.e, -(radar_snr_th * (N*L)) / vru_snr_total)
 
 # Convert to dB
 sim_snr = 20*np.log10(sim_snr)
 sim_rate = c_Bandwidth * np.log2(1 + sim_snr)
-print(sim_outage)
-print(sim_snr)
+print("Outage:\n", sim_outage)
+print("SNR:\n", sim_snr)
+print("PD:\n", sim_pd)
 # print("Theory = ", theory, " Sim = ", sim)
 
 # avg_diff = np.mean(np.abs(theory - sim) / sim)
