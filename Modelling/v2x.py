@@ -4,13 +4,14 @@ from scipy import constants
 import scipy
 
 # SIM PARAMETERS
-N = 150_000 # Num iterations
-L = 3 # Number of links to target
-NUM_CARS = 6 # Total number of interferers
-NUM_POINTS = 14
-NUM_PLOTS = 1
+N = 300_000 # Num iterations
+L = 1 # Number of links to target
+NUM_CARS = 10 # Total number of interferers
+NUM_POINTS = 16
+NUM_PLOTS = 4
 
 target_rcs = 100
+vru_rcs = 10
 reuse_dist = 30
 
 # ANTENNA PARAMETERS
@@ -27,8 +28,8 @@ total_power = 16
 comms_power = 4
 sensing_power = 12
 
-comms_snr_th = 10**(20/10) # 20 dB
-radar_snr_th = 10**(20/10) # 20 dB
+comms_snr_th = 10**(5/10) # 5 dB
+radar_snr_th = 10**(5/10) # 5 dB
 
 def P_u(u, psi):
     arr = np.zeros(u, complex)
@@ -68,29 +69,26 @@ R_max = 150
 
 # Power variation
 link_dist = 150
-link_angles = np.random.uniform(-constants.pi/3, constants.pi/3, L)
-sensing_powers = np.arange(1, total_power - 1, (total_power - 2) / NUM_POINTS)
-comms_powers = total_power - sensing_powers
-# Comms power optimisation
-# Y_i = np.zeros(L, complex)
-# for i in range(L):
-#     Y_i[i] = P_u(Ncr, np.sin(link_angles[i])).H @ P_u(Ncr, np.sin(theta[i])) @ P_u(Nct, np.sin(theta[i])).H @ P_u(Nct, np.sin(-link_angles[i]))
-# comms_power_1 = (total_power - (sensing_power * L)*link_dist**2) / (link_dist**2 + Y_i[0]*np.sum(link_dist**2 / Y_i[1:L]))
-# if l == 0:
-#     comms_power = comms_power_1 
-# else:
-#     comms_power = (comms_power_1 * Y_i[1] * link_dist**2) / (link_dist**2 * Y_i[l])
-# print(comms_powers)
+# link_angles = np.random.uniform(-constants.pi/3, constants.pi/3, L)
+# sensing_powers = np.arange(1, total_power - 1, (total_power - 2) / NUM_POINTS)
+# comms_powers = total_power - sensing_powers
+
+# Time variation
+relative_velocities = np.arange(0, 120, 120/NUM_PLOTS)
+relative_velocities *= 1000 / 3600 # Convert to m/s
+time_increment = 1e-9
 
 theory = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_outage = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_snr = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_pd = np.zeros((NUM_PLOTS, NUM_POINTS))
 
-c_noise_power = 10**(-120/10)
+c_noise_power = 10**(-110/10)
 
 for a in range(NUM_PLOTS):
     print("Plot ", a+1, "of ", NUM_PLOTS)
+
+    relative_velocity = relative_velocities[a]
 
     for d in range(NUM_POINTS):
         print("Point ", d+1, "of ", NUM_POINTS)
@@ -99,8 +97,10 @@ for a in range(NUM_PLOTS):
         outage_count = 0
         snr_total = 0
 
-        sensing_power = sensing_powers[d]
-        comms_power = comms_powers[d]
+        # sensing_power = sensing_powers[d]
+        # comms_power = comms_powers[d]
+
+        time_step = time_increment * d
 
         for n in range(N):
             outage_iteration = False
@@ -110,7 +110,7 @@ for a in range(NUM_PLOTS):
             link_angles = np.zeros(L)
             # link_angles = np.random.uniform(-constants.pi/3, constants.pi/3, L)
             for i in range(L):
-               link_dists[i] = link_dist
+               link_dists[i] = link_dist + time_step * relative_velocity
             
             for l in range(L): # for each link
                 # Set up sim geometry
@@ -135,6 +135,8 @@ for a in range(NUM_PLOTS):
                 z = 0.01
                 jamming = np.sum((z**2*sensing_power*Nsr*tAntennaGain*rAntennaGain*target_rcs*s_carrier_w**2)/((4*constants.pi)**3*car_dists))
                 radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * target_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * (s_noise_power + clutterInterference + jamming) * link_dists[l]**4)
+
+                vru_radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * vru_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * (s_noise_power + clutterInterference + jamming) * link_dist**4)
 
                 if (radarSnr < radar_snr_th):
                     radar_outage_count += 1
@@ -205,40 +207,41 @@ print(sim_snr)
 #         H_s += alpha * P_u(Nst, np.sin(phi)) @ a_t.H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
 
 colours = ["blue", "red", "yellow", "green"]
+x_pts = np.arange(0, 1e-9*NUM_POINTS, 1e-9)
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(sensing_powers, sim_outage[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+    plt.plot(x_pts, sim_outage[i], 'ko-', label="v=" + str(relative_velocities[i]) + " m/s", linewidth=0.5, markerfacecolor="none", markersize=6)
     # plt.plot(theory[i], comms_powers, 'ko--', label="Theory = "+str(-170 + i*10) , linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.ylabel("Radar Power (W)")
 plt.ylabel("Outage")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([0, 16])
+# plt.xlim([0, 16])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(sensing_powers, sim_rate[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+    plt.plot(x_pts, sim_rate[i], 'ko-', label="v=" + str(relative_velocities[i]) + " m/s", linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.ylabel("Radar Power (W)")
 plt.xlabel("Rate (bits/sec)")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([0, 16])
+# plt.xlim([0, 16])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(sensing_powers, sim_pd[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+    plt.plot(x_pts, sim_pd[i], 'ko-', label="v=" + str(relative_velocities[i]) + " m/s", linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.ylabel("Radar Power (W)")
 plt.xlabel("Rate (bits/sec)")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([0, 16])
+# plt.xlim([0, 16])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
