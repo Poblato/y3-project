@@ -209,7 +209,7 @@ colours = ["blue", "red", "yellow", "green"]
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(sensing_powers, sim_outage[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+    plt.plot(reuse_dists, sim_outage[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
     # plt.plot(theory[i], comms_powers, 'ko--', label="Theory = "+str(-170 + i*10) , linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Radar Power (W)")
 plt.ylabel("Outage")
@@ -222,7 +222,7 @@ plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(sensing_powers, sim_rate[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+    plt.plot(reuse_dists, sim_rate[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Radar Power (W)")
 plt.ylabel("Rate (bits/sec)")
 plt.yscale('log')
@@ -234,7 +234,7 @@ plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(sensing_powers, sim_pd[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+    plt.plot(reuse_dists, sim_pd[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Radar Power (W)")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
