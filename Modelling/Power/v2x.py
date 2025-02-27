@@ -4,7 +4,7 @@ from scipy import constants
 import scipy
 
 # SIM PARAMETERS
-N = 200_000 # Num iterations
+N = 100_000 # Num iterations
 L = 1 # Number of links to target
 NUM_CARS = 6 # Total number of interferers
 NUM_POINTS = 14
@@ -12,7 +12,7 @@ NUM_PLOTS = 1
 
 target_rcs = 100
 vru_rcs = 10
-reuse_dist = 150
+reuse_dist = 100
 link_dist = 150
 
 # ANTENNA PARAMETERS
@@ -169,8 +169,8 @@ for a in range(NUM_PLOTS):
         # theory[a][d] = (1 - pow(np.e, temp.real))
         sim_outage[a][d] = outage_count / N
         sim_snr[a][d] = snr_total / N
-        sim_pd[a][d] = np.pow(np.e, -(radar_snr_th * (N*L)) / radar_snr_total)
-        vru_pd[a][d] = np.pow(np.e, -(radar_snr_th * (N*L)) / vru_snr_total)
+        sim_pd[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / radar_snr_total)
+        vru_pd[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / vru_snr_total)
 
 # Convert to dB
 sim_snr = 20*np.log10(sim_snr)

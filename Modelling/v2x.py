@@ -4,10 +4,10 @@ from scipy import constants
 import scipy
 
 # SIM PARAMETERS
-N = 200_000 # Num iterations
+N = 300_000 # Num iterations
 L = 1 # Number of links to target
 NUM_CARS = 6 # Total number of interferers
-NUM_POINTS = 14
+NUM_POINTS = 20
 NUM_PLOTS = 1
 
 target_rcs = 100
@@ -26,8 +26,8 @@ rAntennaGain = 10**(8/10) # 8 dB
 
 # SIGNAL PARAMETERS
 total_power = 16
-comms_power = 4
-sensing_power = 12
+comms_power = 12
+sensing_power = 4
 
 comms_snr_th = 10**(5/10) # 5 dB
 radar_snr_th = 10**(5/10) # 5 dB
@@ -73,7 +73,7 @@ R_max = 150
 # comms_powers = total_power - sensing_powers
 
 # Reuse dist variation
-reuse_dists = np.arange(20, 300, (280 / NUM_POINTS))
+reuse_dists = np.arange(20, 200, (180 / NUM_POINTS))
 
 theory = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_outage = np.zeros((NUM_PLOTS, NUM_POINTS))
@@ -174,12 +174,13 @@ for a in range(NUM_PLOTS):
         # theory[a][d] = (1 - pow(np.e, temp.real))
         sim_outage[a][d] = outage_count / N
         sim_snr[a][d] = snr_total / N
-        sim_pd[a][d] = np.pow(np.e, -(radar_snr_th * (N*L)) / radar_snr_total)
-        vru_pd[a][d] = np.pow(np.e, -(radar_snr_th * (N*L)) / vru_snr_total)
+        sim_pd[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / radar_snr_total)
+        vru_pd[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / vru_snr_total)
 
 # Convert to dB
 sim_snr = 20*np.log10(sim_snr)
 sim_rate = c_Bandwidth * np.log2(1 + sim_snr)
+sim_ase = 4 * sim_rate / (np.pi * (reuse_dists**2))
 print("Outage:\n", sim_outage)
 print("SNR:\n", sim_snr)
 print("PD:\n", sim_pd)
@@ -211,11 +212,11 @@ plt.figure()
 for i in range(NUM_PLOTS):
     plt.plot(reuse_dists, sim_outage[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
     # plt.plot(theory[i], comms_powers, 'ko--', label="Theory = "+str(-170 + i*10) , linewidth=0.5, markerfacecolor="none", markersize=6)
-plt.xlabel("Radar Power (W)")
+plt.xlabel("Reuse Distance (m)")
 plt.ylabel("Outage")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([0, 16])
+plt.xlim([0, 300])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
@@ -223,11 +224,11 @@ plt.grid(True, linestyle='--')
 plt.figure()
 for i in range(NUM_PLOTS):
     plt.plot(reuse_dists, sim_rate[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
-plt.xlabel("Radar Power (W)")
+plt.xlabel("Reuse Distance (m)")
 plt.ylabel("Rate (bits/sec)")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([0, 16])
+plt.xlim([0, 300])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
@@ -235,11 +236,23 @@ plt.grid(True, linestyle='--')
 plt.figure()
 for i in range(NUM_PLOTS):
     plt.plot(reuse_dists, sim_pd[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
-plt.xlabel("Radar Power (W)")
+plt.xlabel("Reuse Distance (m)")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([0, 16])
+plt.xlim([0, 300])
+# plt.legend()
+plt.tick_params(axis='both', direction='in', length=6)
+plt.grid(True, linestyle='--')
+
+plt.figure()
+for i in range(NUM_PLOTS):
+    plt.plot(reuse_dists, sim_ase[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.xlabel("Reuse Distance (m)")
+plt.ylabel("Area Spectral Efficiency (Bits/s/m^2)")
+# plt.yscale('log')
+# plt.ylim([0, 10])
+plt.xlim([0, 300])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
