@@ -9,14 +9,11 @@ L = 1 # Number of links to target
 NUM_CARS = 6 # Total number of interferers
 NUM_POINTS = 20
 NUM_PLOTS = 1
-TIME_STEPS = 100
 
 target_rcs = 100
 vru_rcs = 10
 reuse_dist = 150
 link_dist = 150
-
-time_step = 1e-6 # 1 microsecond
 
 # ANTENNA PARAMETERS
 Nct = 8 # Comms Transmit antennas
@@ -43,7 +40,7 @@ def P_u(u, psi):
 
 # COMMS
 K = 4.26 # Rician Factor
-time_instant = 0
+time_step = 0
 c_carrier_f = 28_000_000_000
 c_carrier_w = c_carrier_f / constants.c
 s_carrier_f = 24_000_000_000
@@ -122,12 +119,12 @@ for a in range(NUM_PLOTS):
                 H_c = np.matrix(np.zeros((Ncr, Nct), complex))
                 alpha_angles = np.random.uniform(0, 2*constants.pi, P)
                 alpha = np.cos(alpha_angles[0]) + 1j*np.sin(alpha_angles[0])
-                omega = 2*constants.pi*c_carrier_f*relative_velocity*symbol_period*np.sin(theta[0])/constants.c #doppler frequency shift
-                H_c += np.sqrt((K * Ncr * Nct)/(K+1)) * alpha * P_u(Ncr, np.sin(phi[0])) @ P_u(Nct, np.sin(theta[0])).H * (np.cos(omega * time_instant) + 1j*np.sin(omega * time_instant))
+                omega = 2*constants.pi*c_carrier_f*relative_velocity*symbol_period*np.sin(phi[0])/constants.c #doppler frequency shift
+                H_c += np.sqrt((K * Ncr * Nct)/(K+1)) * alpha * P_u(Ncr, np.sin(phi[0])) @ P_u(Nct, np.sin(theta[0])).H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
                 for i in range(1, P):
                     alpha = np.cos(alpha_angles[i]) + 1j*np.sin(alpha_angles[i])
-                    omega = 2*constants.pi*c_carrier_f*relative_velocity*symbol_period*np.sin(theta[i])/constants.c #doppler frequency shift
-                    H_c += np.sqrt((Ncr * Nct)/((K+1)*P)) * alpha * P_u(Ncr, np.sin(phi[i])) @ P_u(Nct, np.sin(theta[i])).H * (np.cos(omega * time_instant) + 1j*np.sin(omega * time_instant))
+                    omega = 2*constants.pi*c_carrier_f*relative_velocity*symbol_period*np.sin(phi[i])/constants.c #doppler frequency shift
+                    H_c += np.sqrt((Ncr * Nct)/((K+1)*P)) * alpha * P_u(Ncr, np.sin(phi[i])) @ P_u(Nct, np.sin(theta[i])).H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
 
                 symbol = 1
                 clutterInterference = 1.2153e-11
@@ -154,7 +151,7 @@ for a in range(NUM_PLOTS):
                 receivedSignal = omega.H @ receivedSignal
 
                 # include compensation for velocity doppler shift
-                complex_angle = -2*constants.pi*c_carrier_f*relative_velocity*symbol_period*(np.sin(theta[0])+r_error)*time_instant/constants.c
+                complex_angle = -2*constants.pi*c_carrier_f*relative_velocity*symbol_period*(np.sin(theta[0])+r_error)*time_step/constants.c
                 receivedSignal *= np.cos(complex_angle) + 1j*np.sin(complex_angle)
 
                 comms_snr = (comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2) * np.abs(omega.H @ H_c @ f)**2 / c_noise_power
@@ -205,9 +202,9 @@ print("PD:\n", sim_pd)
 #     omega = 2*constants.pi*s_carrier_f*relative_velocity*symbol_period*np.sin(theta)/constants.c #doppler frequency shift
 #     a_t = P_u(Nsr, np.sin(theta))
 #     if (i < N_d):
-#         H_s += alpha * P_u(Nst, np.sin(theta)) @ a_t.H * (np.cos(omega * time_instant) + 1j*np.sin(omega * time_instant))
+#         H_s += alpha * P_u(Nst, np.sin(theta)) @ a_t.H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
 #     else:
-#         H_s += alpha * P_u(Nst, np.sin(phi)) @ a_t.H * (np.cos(omega * time_instant) + 1j*np.sin(omega * time_instant))
+#         H_s += alpha * P_u(Nst, np.sin(phi)) @ a_t.H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
 
 colours = ["blue", "red", "yellow", "green"]
 
