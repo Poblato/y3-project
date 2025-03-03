@@ -4,10 +4,11 @@ from scipy import constants
 import scipy
 
 # SIM PARAMETERS
-N = 300_000 # Num iterations
+N = 30_000 # Num iterations
 L = 1 # Number of links to target
-NUM_CARS = 6 # Total number of interferers
-NUM_POINTS = 20
+NUM_CARS = 6 # Total number of cars for radar bounces
+NUM_INTERFERERS = 2 # Total number of interfering cars
+NUM_POINTS = 15
 NUM_PLOTS = 1
 
 target_rcs = 100
@@ -96,6 +97,8 @@ for a in range(NUM_PLOTS):
         radar_snr_total = 0
         vru_snr_total = 0
         outage_count = 0
+        radar_outage_count = 0
+        vru_outage_count = 0
         snr_total = 0
 
         # reuse_dist = reuse_dists[d]
@@ -121,7 +124,12 @@ for a in range(NUM_PLOTS):
                 # Set up sim geometry
                 theta[0] = link_angles[l]
                 theta[1:P] = np.random.uniform(-constants.pi/2, constants.pi/2, P - 1)
-                phi = -theta
+                phi[0] = -theta[0]
+                phi[1:P] = np.random.uniform(-constants.pi/2, constants.pi/2, P - 1)
+
+                # Worst case - interferers at reuse dist
+                # interferer_dists = np.zeros(NUM_INTERFERERS) + reuse_dist - np.random.pareto(1, NUM_CARS)
+                interferer_dists = np.zeros(NUM_INTERFERERS) + reuse_dist
 
                 # Simulation
                 H_c = np.matrix(np.zeros((Ncr, Nct), complex))
@@ -134,9 +142,35 @@ for a in range(NUM_PLOTS):
                     omega = 2*constants.pi*c_carrier_f*relative_velocity*symbol_period*np.sin(theta[i])/constants.c #doppler frequency shift
                     H_c += np.sqrt((Ncr * Nct)/((K+1)*P)) * alpha * P_u(Ncr, np.sin(phi[i])) @ P_u(Nct, np.sin(theta[i])).H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
 
-                symbol = 1
+                iH_c = np.zeros(NUM_CARS, np.matrix)
+                i_theta = np.zeros(P)
+                i_phi = np.zeros(P)
+                for k in range(NUM_CARS):
+                    # Interferer transmission angle
+                    i_theta[0] = link_angles[l] + np.random.uniform(constants.pi / 6, constants.pi/3)
+                    # NLOS path AoDs
+                    i_theta[1:P] = np.random.uniform(-constants.pi/2, constants.pi/2, P - 1)
+                    # AoAs
+                    i_phi[0] = -i_theta[0]
+                    i_phi[1:P] = np.random.uniform(-constants.pi/2, constants.pi/2, P - 1)
+
+                    iH_c[k] = np.matrix(np.zeros((Ncr, Nct), complex))
+                    alpha_angles = np.random.uniform(0, 2*constants.pi, P)
+                    alpha = np.cos(alpha_angles[0]) + 1j*np.sin(alpha_angles[0])
+                    omega = 2*constants.pi*c_carrier_f*relative_velocity*symbol_period*np.sin(i_theta[0])/constants.c #doppler frequency shift
+                    iH_c[k] += np.sqrt((K * Ncr * Nct)/(K+1)) * alpha * P_u(Ncr, np.sin(i_phi[0])) @ P_u(Nct, np.sin(i_theta[0])).H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
+                    for i in range(1, P):
+                        alpha = np.cos(alpha_angles[i]) + 1j*np.sin(alpha_angles[i])
+                        omega = 2*constants.pi*c_carrier_f*relative_velocity*symbol_period*np.sin(i_theta[i])/constants.c #doppler frequency shift
+                        iH_c[k] += np.sqrt((Ncr * Nct)/((K+1)*P)) * alpha * P_u(Ncr, np.sin(i_phi[i])) @ P_u(Nct, np.sin(i_theta[i])).H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
+
+                # Interferer transmission beamformers
+                i_f = np.zeros((NUM_INTERFERERS, Nct), complex)
+                for j in range(NUM_INTERFERERS):
+                    i_f[j] = P_u(Nct, (np.sin(i_theta[j])))[0] # Assume no error, since it doesn't affect much
+
                 clutterInterference = 1.2153e-11
-                car_dists = np.zeros(NUM_CARS) + reuse_dist - np.random.pareto(1, NUM_CARS) # All dists at reuse_dist (worst case)
+                car_dists = np.random.lognormal(20, 5, NUM_CARS)
                 z = 0.01
                 jamming = np.sum((z**2*sensing_power*Nsr*tAntennaGain*rAntennaGain*target_rcs*s_carrier_w**2)/((4*constants.pi)**3*car_dists**4))
                 radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * target_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * (s_noise_power + clutterInterference + jamming) * link_dists[l]**4)
@@ -145,24 +179,24 @@ for a in range(NUM_PLOTS):
 
                 radar_snr_total += radarSnr
                 vru_snr_total += vru_radarSnr
+                if(radarSnr < radar_snr_th):
+                    radar_outage_count += 1
+                if(vru_radarSnr < radar_snr_th):
+                    vru_outage_count += 1
 
                 rxSensitivity = 0.05
                 angle_error = rxSensitivity / radarSnr
                 f = P_u(Nct, (np.sin(theta[0]) + np.random.normal(0, angle_error)))
                 receiverNoise = (np.random.normal(0, c_noise_power / np.sqrt(2), Nct) + 1j * np.random.normal(0, c_noise_power / np.sqrt(2), Nct)) @ np.identity(Nct)
 
-                receivedSignal = np.sqrt((comms_power*c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2))*H_c @ f * symbol + receiverNoise
-
-                # include angle error
                 r_error = np.random.normal(0, angle_error)
                 omega = P_u(Ncr, (np.sin(theta[0]) + r_error))
-                receivedSignal = omega.H @ receivedSignal
 
-                # include compensation for velocity doppler shift
-                complex_angle = -2*constants.pi*c_carrier_f*relative_velocity*symbol_period*(np.sin(theta[0])+r_error)*time_step/constants.c
-                receivedSignal *= np.cos(complex_angle) + 1j*np.sin(complex_angle)
+                interference = 0
+                for j in range(NUM_INTERFERERS):
+                    interference += np.sum((comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*interferer_dists[j])**2) * np.abs(omega.H @ iH_c[j] @ i_f[j])**2)
 
-                comms_snr = (comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2) * np.abs(omega.H @ H_c @ f)**2 / (omega.H @ receiverNoise)
+                comms_snr = (comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2) * np.abs(omega.H @ H_c @ f)**2 / (omega.H @ receiverNoise + interference)
                 snr_total += comms_snr
                 if(comms_snr < comms_snr_th):
                     if (not outage_iteration):
@@ -180,10 +214,13 @@ for a in range(NUM_PLOTS):
         # if (not(temp.imag == 0)):
         #     print("Error: theoretical snr not real")
         # theory[a][d] = (1 - pow(np.e, temp.real))
-        sim_outage[a][d] = outage_count / N
+        sim_outage[a][d] = float(outage_count) / N
         sim_snr[a][d] = snr_total / N
-        sim_pd[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / radar_snr_total)
-        vru_pd[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / vru_snr_total)
+        # sim_pd[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / radar_snr_total)
+        # vru_pd[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / vru_snr_total)
+        sim_pd[a][d] = radar_outage_count / (N*L)
+        vru_pd[a][d] = vru_outage_count / (N*L)
+
 
 # Convert to dB
 sim_snr = 20*np.log10(sim_snr)
