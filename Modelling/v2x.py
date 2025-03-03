@@ -69,15 +69,15 @@ R_max = 150
 # dists = np.arange(R_min, R_max, (R_max - R_min) / NUM_POINTS)
 
 # Power variation
-# sensing_powers = np.arange(1, total_power - 1, (total_power - 2) / NUM_POINTS)
-# comms_powers = total_power - sensing_powers
+sensing_powers = np.arange(1, total_power - 1, (total_power - 2) / NUM_POINTS)
+comms_powers = total_power - sensing_powers
 
 # Reuse dist variation
 # reuse_dists = np.arange(20, 200, (180 / NUM_POINTS))
 
 # Bandwidth Variation
-c_Bandwidths = np.arange(100, 600, 100)
-r_Bandwidths = 600 - c_Bandwidths
+# c_Bandwidths = np.arange(100, 600, 100)
+# r_Bandwidths = 600 - c_Bandwidths
 
 theory = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_outage = np.zeros((NUM_PLOTS, NUM_POINTS))
@@ -100,12 +100,12 @@ for a in range(NUM_PLOTS):
 
         # reuse_dist = reuse_dists[d]
 
-        c_Bandwidth = c_Bandwidths[d]
-        r_Bandwidth = r_Bandwidths[d]
-        s_noise_power = constants.k * noiseFigure * noiseTemp * r_Bandwidth
+        # c_Bandwidth = c_Bandwidths[d]
+        # r_Bandwidth = r_Bandwidths[d]
+        # s_noise_power = constants.k * noiseFigure * noiseTemp * r_Bandwidth
 
-        # sensing_power = sensing_powers[d]
-        # comms_power = comms_powers[d]
+        sensing_power = sensing_powers[d]
+        comms_power = comms_powers[d]
 
         for n in range(N):
             outage_iteration = False
@@ -162,7 +162,7 @@ for a in range(NUM_PLOTS):
                 complex_angle = -2*constants.pi*c_carrier_f*relative_velocity*symbol_period*(np.sin(theta[0])+r_error)*time_step/constants.c
                 receivedSignal *= np.cos(complex_angle) + 1j*np.sin(complex_angle)
 
-                comms_snr = (comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2) * np.abs(omega.H @ H_c @ f)**2 / c_noise_power
+                comms_snr = (comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2) * np.abs(omega.H @ H_c @ f)**2 / (omega.H @ receiverNoise)
                 snr_total += comms_snr
                 if(comms_snr < comms_snr_th):
                     if (not outage_iteration):
@@ -218,49 +218,49 @@ colours = ["blue", "red", "yellow", "green"]
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(reuse_dists, sim_outage[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+    plt.plot(sensing_powers, sim_outage[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
     # plt.plot(theory[i], comms_powers, 'ko--', label="Theory = "+str(-170 + i*10) , linewidth=0.5, markerfacecolor="none", markersize=6)
-plt.xlabel("Reuse Distance (m)")
+plt.xlabel("Radar Power (W)")
 plt.ylabel("Outage")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([0, 300])
+plt.xlim([0, 16])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(reuse_dists, sim_rate[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
-plt.xlabel("Reuse Distance (m)")
+    plt.plot(sensing_powers, sim_rate[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.xlabel("Radar Power (W)")
 plt.ylabel("Rate (bits/sec)")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([0, 300])
+plt.xlim([0, 16])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(reuse_dists, sim_pd[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
-plt.xlabel("Reuse Distance (m)")
+    plt.plot(sensing_powers, sim_pd[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.xlabel("Radar Power (W)")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([0, 300])
+plt.xlim([0, 16])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(reuse_dists, sim_se[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
-plt.xlabel("Reuse Distance (m)")
+    plt.plot(sensing_powers, sim_se[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.xlabel("Radar Power (W)")
 plt.ylabel("Spectral Efficiency (Bits/s/Hz)")
 # plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([0, 300])
+plt.xlim([0, 16])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
