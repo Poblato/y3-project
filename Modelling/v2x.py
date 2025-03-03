@@ -9,14 +9,11 @@ L = 1 # Number of links to target
 NUM_CARS = 6 # Total number of interferers
 NUM_POINTS = 20
 NUM_PLOTS = 1
-TIME_STEPS = 100
 
 target_rcs = 100
 vru_rcs = 10
 reuse_dist = 150
 link_dist = 150
-
-time_step = 1e-6 # 1 microsecond
 
 # ANTENNA PARAMETERS
 Nct = 8 # Comms Transmit antennas
@@ -43,7 +40,7 @@ def P_u(u, psi):
 
 # COMMS
 K = 4.26 # Rician Factor
-time_instant = 0
+time_step = 0
 c_carrier_f = 28_000_000_000
 c_carrier_w = c_carrier_f / constants.c
 s_carrier_f = 24_000_000_000
@@ -76,7 +73,11 @@ R_max = 150
 # comms_powers = total_power - sensing_powers
 
 # Reuse dist variation
-reuse_dists = np.arange(20, 200, (180 / NUM_POINTS))
+# reuse_dists = np.arange(20, 200, (180 / NUM_POINTS))
+
+# Bandwidth Variation
+c_Bandwidths = np.arange(100, 600, 100)
+r_Bandwidths = 600 - c_Bandwidths
 
 theory = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_outage = np.zeros((NUM_PLOTS, NUM_POINTS))
@@ -97,7 +98,11 @@ for a in range(NUM_PLOTS):
         outage_count = 0
         snr_total = 0
 
-        reuse_dist = reuse_dists[d]
+        # reuse_dist = reuse_dists[d]
+
+        c_Bandwidth = c_Bandwidths[d]
+        r_Bandwidth = r_Bandwidths[d]
+        s_noise_power = constants.k * noiseFigure * noiseTemp * r_Bandwidth
 
         # sensing_power = sensing_powers[d]
         # comms_power = comms_powers[d]
@@ -123,15 +128,15 @@ for a in range(NUM_PLOTS):
                 alpha_angles = np.random.uniform(0, 2*constants.pi, P)
                 alpha = np.cos(alpha_angles[0]) + 1j*np.sin(alpha_angles[0])
                 omega = 2*constants.pi*c_carrier_f*relative_velocity*symbol_period*np.sin(theta[0])/constants.c #doppler frequency shift
-                H_c += np.sqrt((K * Ncr * Nct)/(K+1)) * alpha * P_u(Ncr, np.sin(phi[0])) @ P_u(Nct, np.sin(theta[0])).H * (np.cos(omega * time_instant) + 1j*np.sin(omega * time_instant))
+                H_c += np.sqrt((K * Ncr * Nct)/(K+1)) * alpha * P_u(Ncr, np.sin(phi[0])) @ P_u(Nct, np.sin(theta[0])).H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
                 for i in range(1, P):
                     alpha = np.cos(alpha_angles[i]) + 1j*np.sin(alpha_angles[i])
                     omega = 2*constants.pi*c_carrier_f*relative_velocity*symbol_period*np.sin(theta[i])/constants.c #doppler frequency shift
-                    H_c += np.sqrt((Ncr * Nct)/((K+1)*P)) * alpha * P_u(Ncr, np.sin(phi[i])) @ P_u(Nct, np.sin(theta[i])).H * (np.cos(omega * time_instant) + 1j*np.sin(omega * time_instant))
+                    H_c += np.sqrt((Ncr * Nct)/((K+1)*P)) * alpha * P_u(Ncr, np.sin(phi[i])) @ P_u(Nct, np.sin(theta[i])).H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
 
                 symbol = 1
                 clutterInterference = 1.2153e-11
-                car_dists = np.zeros(NUM_CARS) + reuse_dist # All dists at reuse_dist (worst case)
+                car_dists = np.zeros(NUM_CARS) + reuse_dist - np.random.pareto(1, NUM_CARS) # All dists at reuse_dist (worst case)
                 z = 0.01
                 jamming = np.sum((z**2*sensing_power*Nsr*tAntennaGain*rAntennaGain*target_rcs*s_carrier_w**2)/((4*constants.pi)**3*car_dists**4))
                 radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * target_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * (s_noise_power + clutterInterference + jamming) * link_dists[l]**4)
@@ -154,7 +159,7 @@ for a in range(NUM_PLOTS):
                 receivedSignal = omega.H @ receivedSignal
 
                 # include compensation for velocity doppler shift
-                complex_angle = -2*constants.pi*c_carrier_f*relative_velocity*symbol_period*(np.sin(theta[0])+r_error)*time_instant/constants.c
+                complex_angle = -2*constants.pi*c_carrier_f*relative_velocity*symbol_period*(np.sin(theta[0])+r_error)*time_step/constants.c
                 receivedSignal *= np.cos(complex_angle) + 1j*np.sin(complex_angle)
 
                 comms_snr = (comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2) * np.abs(omega.H @ H_c @ f)**2 / c_noise_power
@@ -182,8 +187,8 @@ for a in range(NUM_PLOTS):
 
 # Convert to dB
 sim_snr = 20*np.log10(sim_snr)
-sim_rate = c_Bandwidth * np.log2(1 + sim_snr)
-sim_ase = 4 * sim_rate / (np.pi * (reuse_dists**2))
+sim_se = np.log2(1 + sim_snr)
+sim_rate = c_Bandwidth * sim_se
 print("Outage:\n", sim_outage)
 print("SNR:\n", sim_snr)
 print("PD:\n", sim_pd)
@@ -205,9 +210,9 @@ print("PD:\n", sim_pd)
 #     omega = 2*constants.pi*s_carrier_f*relative_velocity*symbol_period*np.sin(theta)/constants.c #doppler frequency shift
 #     a_t = P_u(Nsr, np.sin(theta))
 #     if (i < N_d):
-#         H_s += alpha * P_u(Nst, np.sin(theta)) @ a_t.H * (np.cos(omega * time_instant) + 1j*np.sin(omega * time_instant))
+#         H_s += alpha * P_u(Nst, np.sin(theta)) @ a_t.H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
 #     else:
-#         H_s += alpha * P_u(Nst, np.sin(phi)) @ a_t.H * (np.cos(omega * time_instant) + 1j*np.sin(omega * time_instant))
+#         H_s += alpha * P_u(Nst, np.sin(phi)) @ a_t.H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
 
 colours = ["blue", "red", "yellow", "green"]
 
@@ -250,9 +255,9 @@ plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(reuse_dists, sim_ase[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+    plt.plot(reuse_dists, sim_se[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Reuse Distance (m)")
-plt.ylabel("Area Spectral Efficiency (Bits/s/m^2)")
+plt.ylabel("Spectral Efficiency (Bits/s/Hz)")
 # plt.yscale('log')
 # plt.ylim([0, 10])
 plt.xlim([0, 300])
