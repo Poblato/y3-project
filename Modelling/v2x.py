@@ -4,16 +4,16 @@ from scipy import constants
 import scipy
 
 # SIM PARAMETERS
-N = 30_000 # Num iterations
+N = 500_000 # Num iterations
 L = 1 # Number of links to target
-NUM_CARS = 6 # Total number of cars for radar bounces
+NUM_CARS = 10 # Total number of cars for radar bounces
 NUM_INTERFERERS = 2 # Total number of interfering cars
 NUM_POINTS = 15
 NUM_PLOTS = 1
 
 target_rcs = 100
 vru_rcs = 10
-reuse_dist = 150
+reuse_dist = 300
 link_dist = 150
 
 # ANTENNA PARAMETERS
@@ -86,7 +86,7 @@ sim_snr = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_pd = np.zeros((NUM_PLOTS, NUM_POINTS))
 vru_pd = np.zeros((NUM_PLOTS, NUM_POINTS))
 
-c_noise_power = 10**(-40/10)
+c_noise_power = 10**(-70/10)
 
 for a in range(NUM_PLOTS):
     print("Plot ", a+1, "of ", NUM_PLOTS)
@@ -170,11 +170,10 @@ for a in range(NUM_PLOTS):
                     i_f[j] = P_u(Nct, (np.sin(i_theta[j])))[0] # Assume no error, since it doesn't affect much
 
                 clutterInterference = 1.2153e-11
-                car_dists = np.random.lognormal(20, 5, NUM_CARS)
+                car_dists = np.random.lognormal(15, 3, NUM_CARS)
                 z = 0.01
                 jamming = np.sum((z**2*sensing_power*Nsr*tAntennaGain*rAntennaGain*target_rcs*s_carrier_w**2)/((4*constants.pi)**3*car_dists**4))
                 radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * target_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * (s_noise_power + clutterInterference + jamming) * link_dists[l]**4)
-
                 vru_radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * vru_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * (s_noise_power + clutterInterference + jamming) * link_dist**4)
 
                 radar_snr_total += radarSnr
@@ -218,14 +217,14 @@ for a in range(NUM_PLOTS):
         sim_snr[a][d] = float(snr_total) / N
         # sim_pd[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / radar_snr_total)
         # vru_pd[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / vru_snr_total)
-        sim_pd[a][d] = float(radar_outage_count) / (N*L)
-        vru_pd[a][d] = float(vru_outage_count) / (N*L)
+        sim_pd[a][d] = 1 - float(radar_outage_count) / (N*L)
+        vru_pd[a][d] = 1 - float(vru_outage_count) / (N*L)
 
 
 # Convert to dB
 sim_snr = 20*np.log10(sim_snr)
-sim_se = np.log2(1 + sim_snr)
-sim_rate = c_Bandwidth * sim_se
+sim_rate = c_Bandwidth * np.log2(1 + sim_snr)
+sim_se = sim_rate / (c_Bandwidth + r_Bandwidth)
 print("Outage:\n", sim_outage)
 print("SNR:\n", sim_snr)
 print("PD:\n", sim_pd)
