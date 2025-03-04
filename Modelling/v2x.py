@@ -194,9 +194,9 @@ for a in range(NUM_PLOTS):
 
                 interference = 0
                 for j in range(NUM_INTERFERERS):
-                    interference += (comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*interferer_dists[j])**2) * (omega.H @ iH_c[j] @ i_f[j])**2
+                    interference += np.abs(omega.H @ iH_c[j] @ i_f[j])**2 / (4*constants.pi*interferer_dists[j])**2
 
-                comms_snr = np.abs((comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2) * (omega.H @ H_c @ f)**2 / (omega.H @ receiverNoise + interference))
+                comms_snr = (comms_power * c_carrier_w**2)/Nct * np.abs(omega.H @ H_c @ f)**2 / ((4*constants.pi*link_dists[l])**2 * (np.abs(omega.H @ receiverNoise) + interference))
                 snr_total += comms_snr
                 if(comms_snr < comms_snr_th):
                     if (not outage_iteration):
