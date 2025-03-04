@@ -194,9 +194,9 @@ for a in range(NUM_PLOTS):
 
                 interference = 0
                 for j in range(NUM_INTERFERERS):
-                    interference += np.sum((comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*interferer_dists[j])**2) * np.abs(omega.H @ iH_c[j] @ i_f[j])**2)
+                    interference += (comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*interferer_dists[j])**2) * (omega.H @ iH_c[j] @ i_f[j])**2
 
-                comms_snr = (comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2) * np.abs(omega.H @ H_c @ f)**2 / (omega.H @ receiverNoise + interference)
+                comms_snr = np.abs((comms_power * c_carrier_w**2)/(Nct*(4*constants.pi*link_dists[l])**2) * (omega.H @ H_c @ f)**2 / (omega.H @ receiverNoise + interference))
                 snr_total += comms_snr
                 if(comms_snr < comms_snr_th):
                     if (not outage_iteration):
@@ -215,11 +215,11 @@ for a in range(NUM_PLOTS):
         #     print("Error: theoretical snr not real")
         # theory[a][d] = (1 - pow(np.e, temp.real))
         sim_outage[a][d] = float(outage_count) / N
-        sim_snr[a][d] = snr_total / N
+        sim_snr[a][d] = float(snr_total) / N
         # sim_pd[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / radar_snr_total)
         # vru_pd[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / vru_snr_total)
-        sim_pd[a][d] = radar_outage_count / (N*L)
-        vru_pd[a][d] = vru_outage_count / (N*L)
+        sim_pd[a][d] = float(radar_outage_count) / (N*L)
+        vru_pd[a][d] = float(vru_outage_count) / (N*L)
 
 
 # Convert to dB
