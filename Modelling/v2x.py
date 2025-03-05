@@ -131,7 +131,7 @@ for a in range(NUM_PLOTS):
                 # interferer_dists = np.zeros(NUM_INTERFERERS) + reuse_dist - np.random.pareto(1, NUM_CARS)
                 interferer_dists = np.zeros(NUM_INTERFERERS) + reuse_dist
 
-                # Simulation
+                # Comms channel matrix
                 H_c = np.matrix(np.zeros((Ncr, Nct), complex))
                 alpha_angles = np.random.uniform(0, 2*constants.pi, P)
                 alpha = np.cos(alpha_angles[0]) + 1j*np.sin(alpha_angles[0])
@@ -142,6 +142,7 @@ for a in range(NUM_PLOTS):
                     omega = 2*constants.pi*c_carrier_f*relative_velocity*symbol_period*np.sin(theta[i])/constants.c #doppler frequency shift
                     H_c += np.sqrt((Ncr * Nct)/((K+1)*P)) * alpha * P_u(Ncr, np.sin(phi[i])) @ P_u(Nct, np.sin(theta[i])).H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
 
+                # Interferer channel matrices
                 iH_c = np.zeros(NUM_INTERFERERS, np.matrix)
                 i_theta = np.zeros(P)
                 i_phi = np.zeros(P)
@@ -164,11 +165,12 @@ for a in range(NUM_PLOTS):
                         omega = 2*constants.pi*c_carrier_f*relative_velocity*symbol_period*np.sin(i_theta[i])/constants.c #doppler frequency shift
                         iH_c[k] += np.sqrt((Ncr * Nct)/((K+1)*P)) * alpha * P_u(Ncr, np.sin(i_phi[i])) @ P_u(Nct, np.sin(i_theta[i])).H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
 
-                # Interferer transmission beamformers
+                # Interferer transmitter beamformers
                 i_f = np.zeros((NUM_INTERFERERS, Nct), complex)
                 for j in range(NUM_INTERFERERS):
                     i_f[j] = P_u(Nct, (np.sin(i_theta[j])))[0] # Assume no error, since it doesn't affect much
 
+                # Radar
                 clutterInterference = 1.2153e-11
                 car_dists = np.random.lognormal(15, 3, NUM_CARS)
                 z = 0.01
@@ -185,10 +187,12 @@ for a in range(NUM_PLOTS):
 
                 rxSensitivity = 0.05
                 angle_error = rxSensitivity / radarSnr
+                # Comms transmitter beamformer
                 f = P_u(Nct, (np.sin(theta[0]) + np.random.normal(0, angle_error)))
                 receiverNoise = (np.random.normal(0, c_noise_power / np.sqrt(2), Nct) + 1j * np.random.normal(0, c_noise_power / np.sqrt(2), Nct)) @ np.identity(Nct)
 
                 r_error = np.random.normal(0, angle_error)
+                # Comms receiver beamformer
                 omega = P_u(Ncr, (np.sin(theta[0]) + r_error))
 
                 interference = 0
