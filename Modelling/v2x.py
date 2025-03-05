@@ -142,10 +142,10 @@ for a in range(NUM_PLOTS):
                     omega = 2*constants.pi*c_carrier_f*relative_velocity*symbol_period*np.sin(theta[i])/constants.c #doppler frequency shift
                     H_c += np.sqrt((Ncr * Nct)/((K+1)*P)) * alpha * P_u(Ncr, np.sin(phi[i])) @ P_u(Nct, np.sin(theta[i])).H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
 
-                iH_c = np.zeros(NUM_CARS, np.matrix)
+                iH_c = np.zeros(NUM_INTERFERERS, np.matrix)
                 i_theta = np.zeros(P)
                 i_phi = np.zeros(P)
-                for k in range(NUM_CARS):
+                for k in range(NUM_INTERFERERS):
                     # Interferer transmission angle
                     i_theta[0] = link_angles[l] + np.random.uniform(constants.pi / 6, constants.pi/3)
                     # NLOS path AoDs
