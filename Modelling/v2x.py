@@ -127,9 +127,9 @@ for a in range(NUM_PLOTS):
                 phi[0] = -theta[0]
                 phi[1:P] = np.random.uniform(-constants.pi/2, constants.pi/2, P - 1)
 
-                # Worst case - interferers at reuse dist
-                # interferer_dists = np.zeros(NUM_INTERFERERS) + reuse_dist - np.random.pareto(1, NUM_CARS)
-                interferer_dists = np.zeros(NUM_INTERFERERS) + reuse_dist
+                # Worst case - interferers at reuse dist of SV, so +- link dist
+                interferer_dists = np.array([reuse_dist - link_dist, reuse_dist + link_dist])
+                # interferer_dists = interferer_dists - np.random.pareto(10, NUM_CARS)
 
                 # Comms channel matrix
                 H_c = np.matrix(np.zeros((Ncr, Nct), complex))

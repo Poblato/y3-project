@@ -1,0 +1,22 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0" version="26.0.16">
+  <diagram name="Page-1" id="ctdRv1XPNRNASdSG2RCS">
+    <mxGraphModel dx="1185" dy="648" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="xdj_1jg6scipoOYXouYd-1" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;rotation=-45;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="390" y="91.19" width="278" height="113.5" as="geometry" />
+        </mxCell>
+        <mxCell id="xdj_1jg6scipoOYXouYd-3" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;rotation=0;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="450" y="250" width="82.31" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="xdj_1jg6scipoOYXouYd-4" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;rotation=-90;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="367" y="164.69" width="83" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="whXqblaCTvJt0Xpg7Y5V-2" value="" style="fontColor=#0066CC;verticalAlign=top;verticalLabelPosition=bottom;labelPosition=center;align=center;html=1;fillColor=#FFFFFF;strokeColor=#000000;gradientColor=none;gradientDirection=north;strokeWidth=2;shape=mxgraph.networks.radio_tower;rounded=1;shadow=0;comic=0;labelBackgroundColor=none;" parent="1" vertex="1">
+          <mxGeometry x="410" y="230" width="34" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
