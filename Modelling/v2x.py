@@ -9,7 +9,7 @@ L = 1 # Number of links to target
 NUM_CARS = 10 # Total number of cars for radar bounces
 NUM_INTERFERERS = 2 # Total number of interfering cars
 NUM_POINTS = 15
-NUM_PLOTS = 1
+NUM_PLOTS = 3
 
 target_rcs = 100
 vru_rcs = 10
@@ -127,9 +127,14 @@ for a in range(NUM_PLOTS):
                 phi[0] = -theta[0]
                 phi[1:P] = np.random.uniform(-constants.pi/2, constants.pi/2, P - 1)
 
-                # Worst case - interferers at reuse dist of SV, so +- link dist
-                interferer_dists = np.array([reuse_dist - link_dist, reuse_dist + link_dist])
-                # interferer_dists = interferer_dists - np.random.pareto(10, NUM_CARS)
+                match a:
+                    case 0:
+                        interferer_dists = np.array([15, 15])
+                    case 1:
+                        # Worst case - interferers at reuse dist of SV, so +- link dist
+                        interferer_dists = np.array([reuse_dist - link_dist, reuse_dist + link_dist])
+                    case 2: 
+                        interferer_dists = np.array([reuse_dist - link_dist, reuse_dist + link_dist]) - np.random.pareto(10, NUM_CARS)
 
                 # Comms channel matrix
                 H_c = np.matrix(np.zeros((Ncr, Nct), complex))
