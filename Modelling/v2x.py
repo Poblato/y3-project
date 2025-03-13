@@ -4,16 +4,16 @@ from scipy import constants
 import scipy
 
 # SIM PARAMETERS
-N = 500_000 # Num iterations
+N = 250_000 # Num iterations
 L = 1 # Number of links to target
-NUM_CARS = 10 # Total number of cars for radar bounces
+NUM_CARS = 4 # Total number of cars for radar bounces
 NUM_INTERFERERS = 2 # Total number of interfering cars
 NUM_POINTS = 15
-NUM_PLOTS = 3
+NUM_PLOTS = 1
 
 target_rcs = 100
 vru_rcs = 10
-reuse_dist = 300
+reuse_dist = 200
 link_dist = 150
 
 # ANTENNA PARAMETERS
@@ -85,11 +85,18 @@ sim_outage = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_snr = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_pd = np.zeros((NUM_PLOTS, NUM_POINTS))
 vru_pd = np.zeros((NUM_PLOTS, NUM_POINTS))
+sim_pd_t = np.zeros((NUM_PLOTS, NUM_POINTS))
+vru_pd_t = np.zeros((NUM_PLOTS, NUM_POINTS))
 
 c_noise_power = 10**(-70/10)
 
 for a in range(NUM_PLOTS):
     print("Plot ", a+1, "of ", NUM_PLOTS)
+
+    if (a == 2):
+        NUM_INTERFERERS = 6
+    else:
+        NUM_INTERFERERS = 2
 
     for d in range(NUM_POINTS):
         print("Point ", d+1, "of ", NUM_POINTS)
@@ -129,12 +136,12 @@ for a in range(NUM_PLOTS):
 
                 match a:
                     case 0:
-                        interferer_dists = np.array([15, 15])
-                    case 1:
                         # Worst case - interferers at reuse dist of SV, so +- link dist
                         interferer_dists = np.array([reuse_dist - link_dist, reuse_dist + link_dist])
-                    case 2: 
-                        interferer_dists = np.array([reuse_dist - link_dist, reuse_dist + link_dist]) - np.random.pareto(10, NUM_CARS)
+                    case 1: 
+                        interferer_dists = np.array([reuse_dist - link_dist, reuse_dist + link_dist]) * np.random.beta(5, 1, NUM_INTERFERERS)
+                    case 2:
+                        interferer_dists = np.zeros(NUM_INTERFERERS) + 15 # 6 Interferers at 15 m
 
                 # Comms channel matrix
                 H_c = np.matrix(np.zeros((Ncr, Nct), complex))
@@ -177,11 +184,14 @@ for a in range(NUM_PLOTS):
 
                 # Radar
                 clutterInterference = 1.2153e-11
-                car_dists = np.random.lognormal(15, 3, NUM_CARS)
-                z = 0.01
+                car_dists = 5 + np.random.lognormal(2.1, 1.5, NUM_CARS)
+                # car_dists = np.zeros(NUM_CARS) + 15
+                z = 0.001
+                s_noise = np.random.normal(0, s_noise_power)
+                # s_noise = s_noise_power
                 jamming = np.sum((z**2*sensing_power*Nsr*tAntennaGain*rAntennaGain*target_rcs*s_carrier_w**2)/((4*constants.pi)**3*car_dists**4))
-                radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * target_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * (s_noise_power + clutterInterference + jamming) * link_dists[l]**4)
-                vru_radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * vru_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * (s_noise_power + clutterInterference + jamming) * link_dist**4)
+                radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * target_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * (abs(s_noise) + clutterInterference + jamming) * link_dists[l]**4)
+                vru_radarSnr = (sensing_power * Nsr * tAntennaGain * rAntennaGain * vru_rcs * s_carrier_w**2) / ((4*constants.pi)**3 * (abs(s_noise) + clutterInterference + jamming) * link_dist**4)
 
                 radar_snr_total += radarSnr
                 vru_snr_total += vru_radarSnr
@@ -224,8 +234,8 @@ for a in range(NUM_PLOTS):
         # theory[a][d] = (1 - pow(np.e, temp.real))
         sim_outage[a][d] = float(outage_count) / N
         sim_snr[a][d] = float(snr_total) / N
-        # sim_pd[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / radar_snr_total)
-        # vru_pd[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / vru_snr_total)
+        sim_pd_t[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / radar_snr_total)
+        vru_pd_t[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / vru_snr_total)
         sim_pd[a][d] = 1 - float(radar_outage_count) / (N*L)
         vru_pd[a][d] = 1 - float(vru_outage_count) / (N*L)
 
@@ -259,53 +269,66 @@ print("PD:\n", sim_pd)
 #     else:
 #         H_s += alpha * P_u(Nst, np.sin(phi)) @ a_t.H * (np.cos(omega * time_step) + 1j*np.sin(omega * time_step))
 
-colours = ["blue", "red", "yellow", "green"]
+colours = ["red", "yellow", "blue"]
+names = ["Ideal", "Realistic", "None"]
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(sensing_powers, sim_outage[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+    plt.plot(sensing_powers, sim_outage[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
     # plt.plot(theory[i], comms_powers, 'ko--', label="Theory = "+str(-170 + i*10) , linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Radar Power (W)")
 plt.ylabel("Outage")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([0, 16])
+plt.xlim([0, 15])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(sensing_powers, sim_rate[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+    plt.plot(sensing_powers, sim_rate[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
 plt.xlabel("Radar Power (W)")
 plt.ylabel("Rate (bits/sec)")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([0, 16])
+plt.xlim([0, 15])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(sensing_powers, sim_pd[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+    plt.plot(sensing_powers, sim_pd[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
 plt.xlabel("Radar Power (W)")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
-# plt.ylim([0, 10])
-plt.xlim([0, 16])
+# plt.ylim([0.1, 1])
+plt.xlim([0, 15])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(sensing_powers, sim_se[i], 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+    plt.plot(sensing_powers, sim_pd_t[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
+plt.xlabel("Radar Power (W)")
+plt.ylabel("Probability of Detection")
+plt.yscale('log')
+# plt.ylim([0.1, 1])
+plt.xlim([0, 15])
+# plt.legend()
+plt.tick_params(axis='both', direction='in', length=6)
+plt.grid(True, linestyle='--')
+
+plt.figure()
+for i in range(NUM_PLOTS):
+    plt.plot(sensing_powers, sim_se[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Radar Power (W)")
 plt.ylabel("Spectral Efficiency (Bits/s/Hz)")
 # plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([0, 16])
+plt.xlim([0, 15])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
