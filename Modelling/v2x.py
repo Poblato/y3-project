@@ -184,7 +184,7 @@ for a in range(NUM_PLOTS):
 
                 # Radar
                 clutterInterference = 1.2153e-11
-                car_dists = 10 + np.random.pareto(0.7, NUM_CARS)
+                car_dists = 15 + np.random.pareto(0.7, NUM_CARS)
                 # car_dists = np.zeros(NUM_CARS) + 24
                 z = 0.01
                 s_noise = np.random.normal(0, s_noise_power)
