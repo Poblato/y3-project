@@ -4,12 +4,12 @@ from scipy import constants
 import scipy
 
 # SIM PARAMETERS
-N = 50_000 # Num iterations
+N = 250_000 # Num iterations
 L = 1 # Number of links to target
 NUM_CARS = 2 # Total number of cars for radar bounces
 NUM_INTERFERERS = 2 # Total number of interfering cars
 NUM_POINTS = 15
-NUM_PLOTS = 1
+NUM_PLOTS = 2
 
 target_rcs = 100
 vru_rcs = 10
@@ -54,7 +54,7 @@ phi = np.zeros(P) #angles of arrival
 theta = np.zeros(P) #angles of departure
 
 noiseFigure = 4.5
-noiseTemp = 290
+noiseTemp = 300
 r_Bandwidth = 500_000_000
 s_noise_power = constants.k * noiseFigure * noiseTemp * r_Bandwidth
 c_Bandwidth = 100_000_000
@@ -184,8 +184,8 @@ for a in range(NUM_PLOTS):
 
                 # Radar
                 clutterInterference = 1.2153e-11
-                car_dists = 10 + np.random.pareto(0.5, NUM_CARS)
-                # car_dists = np.zeros(NUM_CARS) + 15
+                car_dists = 10 + np.random.pareto(0.7, NUM_CARS)
+                # car_dists = np.zeros(NUM_CARS) + 24
                 z = 0.01
                 s_noise = np.random.normal(0, s_noise_power)
                 # s_noise = s_noise_power
@@ -297,10 +297,10 @@ plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
 
-plot_pd = np.mean(sim_pd, 1)
+plot_pd = np.mean(sim_pd, 0)
 
 plt.figure()
-plt.plot(sensing_powers, plot_pd, 'ko-', label=names[i], linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.plot(sensing_powers, plot_pd, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Radar Power (W)")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
@@ -310,9 +310,10 @@ plt.xlim([0, 15])
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
 
+plot_pd_t = np.mean(sim_pd_t, 0)
+
 plt.figure()
-for i in range(NUM_PLOTS):
-    plt.plot(sensing_powers, sim_pd_t[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.plot(sensing_powers, plot_pd_t, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Radar Power (W)")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
