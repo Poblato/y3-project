@@ -4,12 +4,12 @@ from scipy import constants
 import scipy
 
 # SIM PARAMETERS
-N = 250_000 # Num iterations
+N = 500_000 # Num iterations
 L = 1 # Number of links to target
 NUM_CARS = 2 # Total number of cars for radar bounces
 NUM_INTERFERERS = 2 # Total number of interfering cars
 NUM_POINTS = 15
-NUM_PLOTS = 2
+NUM_PLOTS = 3
 
 target_rcs = 100
 vru_rcs = 10
@@ -139,9 +139,12 @@ for a in range(NUM_PLOTS):
                         # Worst case - interferers at reuse dist of SV, so +- link dist
                         interferer_dists = np.array([reuse_dist - link_dist, reuse_dist + link_dist])
                     case 1: 
-                        interferer_dists = np.array([-link_dist, link_dist]) + (reuse_dist * np.random.beta(5, 1, NUM_INTERFERERS))
+                        interferer_dists = np.array([-link_dist, link_dist]) + ((reuse_dist-12) * np.random.beta(5, 1, NUM_INTERFERERS))
                     case 2:
                         interferer_dists = np.zeros(NUM_INTERFERERS) + 15 # 6 Interferers at 15 m
+                for i in range(NUM_INTERFERERS): # Enforce minimum distance
+                    if interferer_dists[i] > 12:
+                        interferer_dists[i] = 12
 
                 # Comms channel matrix
                 H_c = np.matrix(np.zeros((Ncr, Nct), complex))
@@ -184,7 +187,7 @@ for a in range(NUM_PLOTS):
 
                 # Radar
                 clutterInterference = 1.2153e-11
-                car_dists = 15 + np.random.pareto(0.7, NUM_CARS)
+                car_dists = 12 + np.random.pareto(0.7, NUM_CARS)
                 # car_dists = np.zeros(NUM_CARS) + 24
                 z = 0.01
                 s_noise = np.random.normal(0, s_noise_power)
