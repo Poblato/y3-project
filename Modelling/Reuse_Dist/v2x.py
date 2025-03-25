@@ -141,7 +141,7 @@ for a in range(NUM_PLOTS):
                     case 1: 
                         interferer_dists = np.array([-link_dist, link_dist]) + ((reuse_dist-12) * np.random.beta(5, 1, NUM_INTERFERERS))
                     case 2:
-                        interferer_dists = np.zeros(NUM_INTERFERERS) + 15 # 6 Interferers at 15 m
+                        interferer_dists = np.zeros(NUM_INTERFERERS) + 12 # 6 Interferers at 12 m
                 for i in range(NUM_INTERFERERS): # Enforce minimum distance
                     if interferer_dists[i] > 12:
                         interferer_dists[i] = 12
