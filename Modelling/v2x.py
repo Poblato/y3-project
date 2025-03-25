@@ -245,8 +245,8 @@ for a in range(NUM_PLOTS):
 
 # Convert to dB
 sim_snr = 20*np.log10(sim_snr)
-sim_rate = c_Bandwidth * np.log2(1 + sim_snr)
-sim_se = sim_rate / (c_Bandwidth + r_Bandwidth)
+sim_rate = c_Bandwidth * np.log2(1 + sim_snr) / 1_000_000
+sim_se = sim_rate*1_000_000 / (c_Bandwidth + r_Bandwidth)
 print("Outage:\n", sim_outage)
 print("SNR:\n", sim_snr)
 print("PD:\n", sim_pd)
@@ -292,7 +292,7 @@ plt.figure()
 for i in range(NUM_PLOTS):
     plt.plot(sensing_powers, sim_rate[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
 plt.xlabel("Radar Power (W)")
-plt.ylabel("Rate (bits/sec)")
+plt.ylabel("Rate (Mbits/sec)")
 plt.yscale('log')
 # plt.ylim([0, 10])
 plt.xlim([0, 15])

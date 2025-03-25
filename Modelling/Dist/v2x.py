@@ -13,7 +13,7 @@ NUM_PLOTS = 2
 
 target_rcs = 100
 vru_rcs = 10
-reuse_dist = 200
+reuse_dist = 300
 link_dist = 150
 
 # ANTENNA PARAMETERS
@@ -65,16 +65,16 @@ c_Bandwidth = 100_000_000
 # R_r_max = np.pow((sensing_power * Nsr * rAntennaGain * tAntennaGain * target_rcs * s_carrier_w**2) / (np.pow(4*constants.pi, 3)*s_noise_power*radar_snr_th), 0.25)
 # R_c_max = np.sqrt((comms_power * Ncr * c_carrier_w**2 * K)/(np.pow(4*constants.pi, 2) * c_noise_power*comms_snr_th*(K+1)))
 # R_max = min(R_r_max, R_c_max, 150) # 150 m unless otherwise required
-# R_min = 30
+R_min = 30
 R_max = 150
-# dists = np.arange(R_min, R_max, (R_max - R_min) / NUM_POINTS)
+dists = np.arange(R_min, R_max, (R_max - R_min) / NUM_POINTS)
 
 # Power variation
 # sensing_powers = np.arange(1, total_power - 1, (total_power - 2) / NUM_POINTS)
 # comms_powers = total_power - sensing_powers
 
 # Reuse dist variation
-reuse_dists = np.arange(200, 600, (400 / NUM_POINTS))
+# reuse_dists = np.arange(200, 500, (300 / NUM_POINTS))
 
 # Bandwidth Variation
 # c_Bandwidths = np.arange(100, 600, 100)
@@ -108,7 +108,9 @@ for a in range(NUM_PLOTS):
         vru_outage_count = 0
         snr_total = 0
 
-        reuse_dist = reuse_dists[d]
+        link_dist = dists[d]
+
+        # reuse_dist = reuse_dists[d]
 
         # c_Bandwidth = c_Bandwidths[d]
         # r_Bandwidth = r_Bandwidths[d]
@@ -141,7 +143,7 @@ for a in range(NUM_PLOTS):
                     case 1: 
                         interferer_dists = np.array([-link_dist, link_dist]) + ((reuse_dist-12) * np.random.beta(5, 1, NUM_INTERFERERS))
                     case 2:
-                        interferer_dists = np.zeros(NUM_INTERFERERS) + 15 # 6 Interferers at 15 m
+                        interferer_dists = np.zeros(NUM_INTERFERERS) + 12 # 6 Interferers at 12 m
                 for i in range(NUM_INTERFERERS): # Enforce minimum distance
                     if interferer_dists[i] > 12:
                         interferer_dists[i] = 12
@@ -245,8 +247,8 @@ for a in range(NUM_PLOTS):
 
 # Convert to dB
 sim_snr = 20*np.log10(sim_snr)
-sim_rate = c_Bandwidth * np.log2(1 + sim_snr)
-sim_se = sim_rate / (c_Bandwidth + r_Bandwidth)
+sim_rate = c_Bandwidth * np.log2(1 + sim_snr) / 1_000_000
+sim_se = sim_rate*1_000_000 / (c_Bandwidth + r_Bandwidth)
 print("Outage:\n", sim_outage)
 print("SNR:\n", sim_snr)
 print("PD:\n", sim_pd)
@@ -277,25 +279,25 @@ names = ["Ideal", "Realistic", "None"]
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(reuse_dists, sim_outage[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
+    plt.plot(dists, sim_outage[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
     # plt.plot(theory[i], comms_powers, 'ko--', label="Theory = "+str(-170 + i*10) , linewidth=0.5, markerfacecolor="none", markersize=6)
-plt.xlabel("Reuse Distance (m)")
+plt.xlabel("Hop Distance (m)")
 plt.ylabel("Outage")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([300, 600])
+plt.xlim([R_min, R_max])
 plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(reuse_dists, sim_rate[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
-plt.xlabel("Reuse Distance (m)")
-plt.ylabel("Rate (bits/sec)")
+    plt.plot(dists, sim_rate[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
+plt.xlabel("Hop Distance (m)")
+plt.ylabel("Rate (Mbits/sec)")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([300, 600])
+plt.xlim([R_min, R_max])
 plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
@@ -303,12 +305,12 @@ plt.grid(True, linestyle='--')
 plot_pd = np.mean(sim_pd, 0)
 
 plt.figure()
-plt.plot(reuse_dists, plot_pd, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
-plt.xlabel("Reuse Distance (m)")
+plt.plot(dists, plot_pd, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.xlabel("Hop Distance (m)")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
 # plt.ylim([0.1, 1])
-plt.xlim([300, 600])
+plt.xlim([R_min, R_max])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
@@ -316,24 +318,24 @@ plt.grid(True, linestyle='--')
 plot_pd_t = np.mean(sim_pd_t, 0)
 
 plt.figure()
-plt.plot(reuse_dists, plot_pd_t, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
-plt.xlabel("Reuse Distance (m)")
+plt.plot(dists, plot_pd_t, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.xlabel("Hop Distance (m)")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
 # plt.ylim([0.1, 1])
-plt.xlim([300, 600])
+plt.xlim([R_min, R_max])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(reuse_dists, sim_se[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
-plt.xlabel("Reuse Distance (m)")
+    plt.plot(dists, sim_se[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
+plt.xlabel("Hop Distance (m)")
 plt.ylabel("Spectral Efficiency (Bits/s/Hz)")
 # plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([300, 600])
+plt.xlim([R_min, R_max])
 plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
