@@ -143,7 +143,7 @@ for a in range(NUM_PLOTS):
                     case 2:
                         interferer_dists = np.zeros(NUM_INTERFERERS) + 12 # 6 Interferers at 12 m
                 for i in range(NUM_INTERFERERS): # Enforce minimum distance
-                    if interferer_dists[i] > 12:
+                    if interferer_dists[i] < 12:
                         interferer_dists[i] = 12
 
                 # Comms channel matrix
