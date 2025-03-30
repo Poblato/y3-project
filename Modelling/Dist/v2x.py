@@ -4,7 +4,7 @@ from scipy import constants
 import scipy
 
 # SIM PARAMETERS
-N = 500_000 # Num iterations
+N = 2_000_000 # Num iterations
 L = 1 # Number of links to target
 NUM_CARS = 2 # Total number of cars for radar bounces
 NUM_INTERFERERS = 2 # Total number of interfering cars
@@ -65,8 +65,8 @@ c_Bandwidth = 100_000_000
 # R_r_max = np.pow((sensing_power * Nsr * rAntennaGain * tAntennaGain * target_rcs * s_carrier_w**2) / (np.pow(4*constants.pi, 3)*s_noise_power*radar_snr_th), 0.25)
 # R_c_max = np.sqrt((comms_power * Ncr * c_carrier_w**2 * K)/(np.pow(4*constants.pi, 2) * c_noise_power*comms_snr_th*(K+1)))
 # R_max = min(R_r_max, R_c_max, 150) # 150 m unless otherwise required
-R_min = 30
-R_max = 150
+R_min = 100
+R_max = 200
 dists = np.arange(R_min, R_max, (R_max - R_min) / NUM_POINTS)
 
 # Power variation
