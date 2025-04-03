@@ -8,7 +8,7 @@ N = 2_000_000 # Num iterations
 L = 1 # Number of links to target
 NUM_CARS = 2 # Total number of cars for radar bounces
 NUM_INTERFERERS = 2 # Total number of interfering cars
-NUM_POINTS = 15
+NUM_POINTS = 10
 NUM_PLOTS = 2
 
 target_rcs = 100
@@ -58,14 +58,14 @@ noiseTemp = 300
 r_Bandwidth = 500_000_000
 s_noise_power = constants.k * noiseFigure * noiseTemp * r_Bandwidth
 c_Bandwidth = 100_000_000
-# c_noise_power = 10**((-174 + 10*np.log10(c_Bandwidth) + 10)/10)
+c_noise_power = 10**((-152 + 10*np.log10(c_Bandwidth))/10)
 
 
 # DIST VARIATION
 # R_r_max = np.pow((sensing_power * Nsr * rAntennaGain * tAntennaGain * target_rcs * s_carrier_w**2) / (np.pow(4*constants.pi, 3)*s_noise_power*radar_snr_th), 0.25)
 # R_c_max = np.sqrt((comms_power * Ncr * c_carrier_w**2 * K)/(np.pow(4*constants.pi, 2) * c_noise_power*comms_snr_th*(K+1)))
 # R_max = min(R_r_max, R_c_max, 150) # 150 m unless otherwise required
-R_min = 50
+R_min = 100
 R_max = 200
 dists = np.arange(R_min, R_max, (R_max - R_min) / NUM_POINTS)
 
@@ -87,8 +87,6 @@ sim_pd = np.zeros((NUM_PLOTS, NUM_POINTS))
 vru_pd = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_pd_t = np.zeros((NUM_PLOTS, NUM_POINTS))
 vru_pd_t = np.zeros((NUM_PLOTS, NUM_POINTS))
-
-c_noise_power = 10**(-70/10)
 
 for a in range(NUM_PLOTS):
     print("Plot ", a+1, "of ", NUM_PLOTS)
@@ -245,8 +243,6 @@ for a in range(NUM_PLOTS):
         vru_pd[a][d] = 1 - float(vru_outage_count) / (N*L)
 
 
-# Convert to dB
-sim_snr = 20*np.log10(sim_snr)
 sim_rate = c_Bandwidth * np.log2(1 + sim_snr) / 1_000_000
 sim_se = sim_rate*1_000_000 / (c_Bandwidth + r_Bandwidth)
 print("Outage:\n", sim_outage)

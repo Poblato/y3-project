@@ -4,11 +4,11 @@ from scipy import constants
 import scipy
 
 # SIM PARAMETERS
-N = 1_000_000 # Num iterations
+N = 400_000 # Num iterations
 L = 1 # Number of links to target
 NUM_CARS = 2 # Total number of cars for radar bounces
 NUM_INTERFERERS = 2 # Total number of interfering cars
-NUM_POINTS = 8
+NUM_POINTS = 10
 NUM_PLOTS = 2
 
 target_rcs = 100
@@ -58,10 +58,7 @@ noiseTemp = 300
 r_Bandwidth = 500_000_000
 s_noise_power = constants.k * noiseFigure * noiseTemp * r_Bandwidth
 c_Bandwidth = 100_000_000
-# c_noise_power = 10**((-174 + 10*np.log10(c_Bandwidth) + 10)/10)
-
-# Bandwidth variation
-c_Bandwidths = np.arange(400_000_000, 1_000_000_000, 600_000_000 / NUM_POINTS)
+c_noise_power = 10**((-152 + 10*np.log10(c_Bandwidth))/10)
 
 # DIST VARIATION
 # R_r_max = np.pow((sensing_power * Nsr * rAntennaGain * tAntennaGain * target_rcs * s_carrier_w**2) / (np.pow(4*constants.pi, 3)*s_noise_power*radar_snr_th), 0.25)
@@ -79,8 +76,7 @@ R_max = 150
 # reuse_dists = np.arange(20, 200, (180 / NUM_POINTS))
 
 # Bandwidth Variation
-# c_Bandwidths = np.arange(100, 600, 100)
-# r_Bandwidths = 600 - c_Bandwidths
+c_Bandwidths = np.arange(50_000_000, 300_000_000, 250_000_000 / NUM_POINTS)
 
 theory = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_outage = np.zeros((NUM_PLOTS, NUM_POINTS))
@@ -89,8 +85,6 @@ sim_pd = np.zeros((NUM_PLOTS, NUM_POINTS))
 vru_pd = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_pd_t = np.zeros((NUM_PLOTS, NUM_POINTS))
 vru_pd_t = np.zeros((NUM_PLOTS, NUM_POINTS))
-
-base_c_noise_power = 10**(-70/10)
 
 for a in range(NUM_PLOTS):
     print("Plot ", a+1, "of ", NUM_PLOTS)
@@ -112,16 +106,11 @@ for a in range(NUM_PLOTS):
 
         # reuse_dist = reuse_dists[d]
 
-        # c_Bandwidth = c_Bandwidths[d]
-        # r_Bandwidth = r_Bandwidths[d]
-        # s_noise_power = constants.k * noiseFigure * noiseTemp * r_Bandwidth
+        c_Bandwidth = c_Bandwidths[d]
+        c_noise_power = 10**((-152 + 10*np.log10(c_Bandwidth))/10)
 
         # sensing_power = sensing_powers[d]
         # comms_power = comms_powers[d]
-
-        c_Bandwidth = c_Bandwidths[d]
-
-        c_noise_power = base_c_noise_power * c_Bandwidth / 500_000_000
 
         for n in range(N):
             outage_iteration = False
@@ -249,9 +238,7 @@ for a in range(NUM_PLOTS):
         vru_pd[a][d] = 1 - float(vru_outage_count) / (N*L)
 
 
-# Convert to dB
-sim_snr = 20*np.log10(sim_snr)
-sim_rate = c_Bandwidth * np.log2(1 + sim_snr) / 1_000_000
+sim_rate = c_Bandwidths * np.log2(1 + sim_snr) / 1_000_000
 sim_se = sim_rate*1_000_000 / (c_Bandwidth + r_Bandwidth)
 print("Outage:\n", sim_outage)
 print("SNR:\n", sim_snr)
@@ -291,7 +278,7 @@ plt.xlabel("Communications Bandwidth (MHz)")
 plt.ylabel("Outage")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([400, 1000])
+plt.xlim([50, 300])
 plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
@@ -303,7 +290,7 @@ plt.xlabel("Communications Bandwidth (MHz)")
 plt.ylabel("Rate (Mbits/sec)")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([400, 1000])
+plt.xlim([50, 300])
 plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
@@ -316,7 +303,7 @@ plt.xlabel("Communications Bandwidth (MHz)")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
 # plt.ylim([0.1, 1])
-plt.xlim([400, 1000])
+plt.xlim([50, 300])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
@@ -329,7 +316,7 @@ plt.xlabel("Communications Bandwidth (MHz)")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
 # plt.ylim([0.1, 1])
-plt.xlim([400, 1000])
+plt.xlim([50, 300])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
@@ -341,7 +328,7 @@ plt.xlabel("Communications Bandwidth (MHz)")
 plt.ylabel("Spectral Efficiency (Bits/s/Hz)")
 # plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([400, 1000])
+plt.xlim([50, 300])
 plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')

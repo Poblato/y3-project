@@ -17,7 +17,7 @@ pip install --force-reinstall -v "matplotlib==3.9.2"
 ## test.py
 Basic Monte Carlo test software. This was used to gain familiarity with Monte Carlo Techniques
 ## basic_sim.py
-This simulation attempted to recreate the results of \cite{ASE-paper}. It simulates a user downlink from a BS, with 6 interfering BS's. The channel model includes path-loss, multipath fading, and shadowing. The received signal power (before multipath fading and shadowing) is calculated from the transmitted signal power using the two-slope model
+This simulation attempted to recreate the results of an existing study. It simulates a user downlink from a BS, with 6 interfering BS's. The channel model includes path-loss, multipath fading, and shadowing. The received signal power (before multipath fading and shadowing) is calculated from the transmitted signal power using the two-slope model
 $S = \frac{K}{r^a (1 + R/g)^b} S_t$, where $K$ is a constant, $R$ (m) is the distance between the mobile and the BS, $a$ is the path-loss exponent (two for this simulation), $b$ is the additional path-loss exponent, and $S_t$ (W) is the transmitted signal power.
 This simulation uses Nakagami multipath fading, a model for signals dominated by NLOS paths. It is modelled using a gamma distribution with the following probability density function (PDF). $p_s(s) = (\frac{m}{\Omega})^m \frac{s^{m-1}}{\Gamma (m)} \exp(-m \frac{s}{\Omega}), s >= 0$, where $\Omega$ is the mean received power, $m$ is the Nakagami fading parameter, and $\Gamma()$ is the gamma function. Shadowing is modelled using a log-normal distribution with the following PDF:
 $p_s(s) = \frac{\xi}{\sqrt{2 \pi} \sigma s} \exp(-\frac{(\xi \ln(s) - \mu) ^ 2}{2 \sigma ^ 2}),   s >= 0$
@@ -106,3 +106,8 @@ where $R_u$ is the reuse distance and $R_{min}$ is the minimum distance.
 Note: These distances (for the second and third model) are measured to the SV, so the distances to the TV/RV will be these distances plus or minus the link distance.
 
 Different variants of the file v2x.py are in the Power, Dist, Reuse_Dist, and Bandwidth folders, designed to vary and plot those different variables.
+
+# Figures
+Contains the plotted results of the simulations
+# Diagrams
+Contains other diagrams created for the project

@@ -58,7 +58,7 @@ noiseTemp = 300
 r_Bandwidth = 500_000_000
 s_noise_power = constants.k * noiseFigure * noiseTemp * r_Bandwidth
 c_Bandwidth = 100_000_000
-# c_noise_power = 10**((-174 + 10*np.log10(c_Bandwidth) + 10)/10)
+c_noise_power = 10**((-152 + 10*np.log10(c_Bandwidth))/10)
 
 
 # DIST VARIATION
@@ -87,8 +87,6 @@ sim_pd = np.zeros((NUM_PLOTS, NUM_POINTS))
 vru_pd = np.zeros((NUM_PLOTS, NUM_POINTS))
 sim_pd_t = np.zeros((NUM_PLOTS, NUM_POINTS))
 vru_pd_t = np.zeros((NUM_PLOTS, NUM_POINTS))
-
-c_noise_power = 10**(-70/10)
 
 for a in range(NUM_PLOTS):
     print("Plot ", a+1, "of ", NUM_PLOTS)
@@ -243,8 +241,6 @@ for a in range(NUM_PLOTS):
         vru_pd[a][d] = 1 - float(vru_outage_count) / (N*L)
 
 
-# Convert to dB
-sim_snr = 20*np.log10(sim_snr)
 sim_rate = c_Bandwidth * np.log2(1 + sim_snr) / 1_000_000
 sim_se = sim_rate*1_000_000 / (c_Bandwidth + r_Bandwidth)
 print("Outage:\n", sim_outage)
