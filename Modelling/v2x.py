@@ -4,7 +4,7 @@ from scipy import constants
 import scipy
 
 # SIM PARAMETERS
-N = 50_000_000 # Num iterations
+N = 5_00_000 # Num iterations
 L = 1 # Number of links to target
 NUM_CARS = 2 # Total number of cars for radar bounces
 NUM_INTERFERERS = 2 # Total number of interfering cars
@@ -65,13 +65,13 @@ c_noise_power = 10**((-152 + 10*np.log10(c_Bandwidth))/10)
 # R_r_max = np.pow((sensing_power * Nsr * rAntennaGain * tAntennaGain * target_rcs * s_carrier_w**2) / (np.pow(4*constants.pi, 3)*s_noise_power*radar_snr_th), 0.25)
 # R_c_max = np.sqrt((comms_power * Ncr * c_carrier_w**2 * K)/(np.pow(4*constants.pi, 2) * c_noise_power*comms_snr_th*(K+1)))
 # R_max = min(R_r_max, R_c_max, 150) # 150 m unless otherwise required
-R_min = 50
-R_max = 200
-dists = np.arange(R_min, R_max, (R_max - R_min) / NUM_POINTS)
+# R_min = 50
+# R_max = 200
+# dists = np.arange(R_min, R_max, (R_max - R_min) / NUM_POINTS)
 
 # Power variation
-# sensing_powers = np.arange(1, total_power - 1, (total_power - 2) / NUM_POINTS)
-# comms_powers = total_power - sensing_powers
+sensing_powers = np.arange(1, total_power - 1, (total_power - 2) / NUM_POINTS)
+comms_powers = total_power - sensing_powers
 
 # Reuse dist variation
 # reuse_dists = np.arange(20, 200, (180 / NUM_POINTS))
@@ -106,7 +106,7 @@ for a in range(NUM_PLOTS):
         vru_outage_count = 0
         snr_total = 0
 
-        link_dist = dists[d]
+        # link_dist = dists[d]
 
         # reuse_dist = reuse_dists[d]
 
@@ -114,8 +114,8 @@ for a in range(NUM_PLOTS):
         # r_Bandwidth = r_Bandwidths[d]
         # s_noise_power = constants.k * noiseFigure * noiseTemp * r_Bandwidth
 
-        # sensing_power = sensing_powers[d]
-        # comms_power = comms_powers[d]
+        sensing_power = sensing_powers[d]
+        comms_power = comms_powers[d]
 
         for n in range(N):
             outage_iteration = False
@@ -187,7 +187,7 @@ for a in range(NUM_PLOTS):
 
                 # Radar
                 clutterInterference = 1.2153e-11
-                car_dists = 12 + np.random.pareto(0.7, NUM_CARS)
+                car_dists = 25 + np.random.pareto(0.8, NUM_CARS)
                 # car_dists = np.zeros(NUM_CARS) + 24
                 z = 0.01
                 s_noise = np.random.normal(0, s_noise_power)
@@ -275,25 +275,25 @@ names = ["Ideal", "Realistic", "None"]
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(dists, sim_outage[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
+    plt.plot(sensing_powers, sim_outage[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
     # plt.plot(theory[i], comms_powers, 'ko--', label="Theory = "+str(-170 + i*10) , linewidth=0.5, markerfacecolor="none", markersize=6)
-plt.xlabel("Hop Distance (m)")
+plt.xlabel("Radar Power (W)")
 plt.ylabel("Outage")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([R_min, R_max])
+plt.xlim([0, 15])
 plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(dists, sim_rate[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
-plt.xlabel("Hop Distance (m)")
+    plt.plot(sensing_powers, sim_rate[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
+plt.xlabel("Radar Power (W)")
 plt.ylabel("Rate (Mbits/sec)")
 plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([R_min, R_max])
+plt.xlim([0, 15])
 plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
@@ -301,12 +301,12 @@ plt.grid(True, linestyle='--')
 plot_pd = np.mean(sim_pd, 0)
 
 plt.figure()
-plt.plot(dists, plot_pd, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
-plt.xlabel("Hop Distance (m)")
+plt.plot(sensing_powers, plot_pd, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.xlabel("Radar Power (W)")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
 # plt.ylim([0.1, 1])
-plt.xlim([R_min, R_max])
+plt.xlim([0, 15])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
@@ -314,12 +314,25 @@ plt.grid(True, linestyle='--')
 plot_pd_t = np.mean(sim_pd_t, 0)
 
 plt.figure()
-plt.plot(dists, plot_pd_t, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
-plt.xlabel("Hop Distance (m)")
+plt.plot(sensing_powers, plot_pd_t, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.xlabel("Radar Power (W)")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
 # plt.ylim([0.1, 1])
-plt.xlim([R_min, R_max])
+plt.xlim([0, 15])
+# plt.legend()
+plt.tick_params(axis='both', direction='in', length=6)
+plt.grid(True, linestyle='--')
+
+plot_vru_pd = np.mean(vru_pd, 0)
+
+plt.figure()
+plt.plot(sensing_powers, plot_vru_pd, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.xlabel("Radar Power (W)")
+plt.ylabel("Probability of Detection")
+plt.yscale('log')
+# plt.ylim([0.1, 1])
+plt.xlim([0, 15])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
@@ -327,24 +340,24 @@ plt.grid(True, linestyle='--')
 plot_vru_pd_t = np.mean(vru_pd_t, 0)
 
 plt.figure()
-plt.plot(dists, plot_vru_pd_t, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
-plt.xlabel("Hop Distance (m)")
+plt.plot(sensing_powers, plot_vru_pd_t, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.xlabel("Radar Power (W)")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
 # plt.ylim([0.1, 1])
-plt.xlim([R_min, R_max])
+plt.xlim([0, 15])
 # plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(dists, sim_se[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
-plt.xlabel("Hop Distance (m)")
+    plt.plot(sensing_powers, sim_se[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
+plt.xlabel("Radar Power (W)")
 plt.ylabel("Spectral Efficiency (Bits/s/Hz)")
 # plt.yscale('log')
 # plt.ylim([0, 10])
-plt.xlim([R_min, R_max])
+plt.xlim([0, 15])
 plt.legend()
 plt.tick_params(axis='both', direction='in', length=6)
 plt.grid(True, linestyle='--')
