@@ -6,7 +6,7 @@ import scipy
 # SIM PARAMETERS
 N = 5_00_000 # Num iterations
 L = 1 # Number of links to target
-NUM_CARS = 2 # Total number of cars for radar bounces
+NUM_CARS = 4 # Total number of cars for radar bounces
 NUM_INTERFERERS = 2 # Total number of interfering cars
 NUM_POINTS = 15
 NUM_PLOTS = 1
