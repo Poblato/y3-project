@@ -40,17 +40,17 @@ The total power available is allocated between the sensing and communication wav
 
 The basis of the sensing system is the following set of equations, where $H_0$ represents the null hypothesis (where there is no target present), and $H_1$ the alternative hypothesis (where there is a target present).
 $H_0: \begin{cases}
-        \mathbf{x}_d = \gamma _d  \mathbf{s}_r + \mathbf{n}_d \\
-        \mathbf{x}_s = \mathbf{n}_s
+        x_d = \gamma _d  s_r + n_d \\
+        x_s = n_s
     \end{cases}
 H_1: \begin{cases}
-        \mathbf{x}_d = \gamma _d  \mathbf{s}_r + \mathbf{n}_d \\
-        \mathbf{x}_s = \gamma _t  \mathbf{s}_r + \mathbf{n}_s
-    \end{cases}$, where $\mathbf{x}_d, \mathbf{x}_s$ represent the reference and surveillance signals respectively, $\gamma _d, \gamma _t$ are the channel coefficients, $\mathbf{n}_d, \mathbf{n}_s$ are $L * L$ matrices of the complex Gaussian noise at the reference and surveillance receivers, and $\mathbf{s}_r$ is an arbitrary $L * 1$ vector representing the sampled radar waveform, such that $||\mathbf{s}_r||^2 = P_r$. $L$ is a constant representing the size of the delay-Doppler matrix.
+        x_d = \gamma _d  s_r + n_d \\
+        x_s = \gamma _t  s_r + n_s
+    \end{cases}$, where $x_d, x_s$ represent the reference and surveillance signals respectively, $\gamma _d, \gamma _t$ are the channel coefficients, $n_d, n_s$ are $L * L$ matrices of the complex Gaussian noise at the reference and surveillance receivers, and $s_r$ is an arbitrary $L * 1$ vector representing the sampled radar waveform, such that $||s_r||^2 = P_r$. $L$ is a constant representing the size of the delay-Doppler matrix.
 
 The measured characteristics of the sensing system are its probability of detection ($P_D$) and probability of false alarm ($P_{FA}$), quantified by the following equations:
-$P_D = \Pr\{\mathbf{x}_s^H B \mathbf{x}_s \geq \sigma ^2 \gamma | H_1\}$
-$P_{FA} = \Pr\{\mathbf{x}_s^H B \mathbf{x}_s \geq \sigma ^2 \gamma | H_0\}$, where $B = \frac{\mathbf{x}_d \mathbf{x}_d^H + \sigma ^2 \gamma \mathbf{I}}{||\mathbf{x}_d||^2 + \sigma ^2 \gamma}$, $\sigma$ is an arbitrary constant and $\gamma$ is a constant typically chosen to achieve a specified $P_{FA}$.
+$P_D = \Pr\{x_s^H B x_s \geq \sigma ^2 \gamma | H_1\}$
+$P_{FA} = \Pr\{x_s^H B x_s \geq \sigma ^2 \gamma | H_0\}$, where $B = \frac{x_d x_d^H + \sigma ^2 \gamma I}{||x_d||^2 + \sigma ^2 \gamma}$, $\sigma$ is an arbitrary constant and $\gamma$ is a constant typically chosen to achieve a specified $P_{FA}$.
 
 The theoretical information rate of the communication waveform in bits per channel per second is as follows:
 $R = B\log_2(1 + P_c \frac{|\gamma_c| ^ 2}{\sigma_c^2})$, where $P_c \frac{|\gamma_c| ^ 2}{\sigma_c^2}$ represents the instantaneous SNR at the receiver, $\gamma_c$ is the communication channel coefficient, and $\sigma_c^2$ is the variance of the noise at the communication receiver.
@@ -68,24 +68,24 @@ $P_D = \Pr\{\gamma_{r,n,l} > \gamma_{r,th}\}$
 Probability of false alarm cannot be easily calculated from this method, but can be indirectly controlled through selection of $\gamma_{r,th}$ (where higher $\gamma_{r,th}$ corresponds to a lower PFA).
 
 The channel matrix for communications for a link $n$ at time instant $k$ is defined by:
-$H_{c,n,k} = \sqrt{\frac{K N_{c,r} N_{c,t}}{K+1}}\alpha_{n,0} \mathbf{a}_r(\theta_{n,0}) \mathbf{a}_t^*(\theta_{n,0})e^{j\omega_0 k} + \sqrt{\frac{N_{c,r} N_{c,t}}{(K+1) P}}\sum_{i=1}^P\alpha_{n,i} \mathbf{a}_r(\phi_{n,i}) \mathbf{a}_t^*(\theta_{n,i})e^{j\omega_i k}$,
-where the first term represents the LOS component, and the second represents the P NLOS components. $K$ is the Rician factor of the channel representing the relative power of the LOS component, $\alpha_{n,i}$ is a unity gain, constant phase factor used to simulate multipath fading, $\omega_i$ is the Doppler frequency shift of the signal, $\phi_{n,i}$ and $\theta_{n,i}$ are the angles of arrival (AoAs) and angles of departure (AoDs) of the signal paths. Taking $c$ as the speed of light, $f_c$ as the frequency of the communications carrier, $v_m$ as the relative velocity of the target, and $T_s$ as symbol period, the Doppler frequency shift is defined as $\omega_i = 2\pi f_cv_mT_s\sin{(\phi_{n,i})}/c$. Using the function $\mathbf{P}_U(\psi) = \frac{1}{\sqrt{U}}[1, e^{j\pi\psi}, ... , e^{j\pi\psi(U-1)}]^T$ to generate beamforming vectors, $\mathbf{a}_r(\theta_{n,i})$ and $\mathbf{a}_r(\phi_{n,i})$ can be defined as $\mathbf{a}_t(\theta_{n,i}) = \mathbf{P}_{N_{c,t}}(\sin{\theta_{n,i}})$ and $\mathbf{a}_r(\phi_{n,i}) = \mathbf{P}_{N_{c,r}}(\sin{\phi_{n,i}})$.
+$H_{c,n,k} = \sqrt{\frac{K N_{c,r} N_{c,t}}{K+1}}\alpha_{n,0} a_r(\theta_{n,0}) a_t^*(\theta_{n,0})e^{j\omega_0 k} + \sqrt{\frac{N_{c,r} N_{c,t}}{(K+1) P}}\sum_{i=1}^P\alpha_{n,i} a_r(\phi_{n,i}) a_t^*(\theta_{n,i})e^{j\omega_i k}$,
+where the first term represents the LOS component, and the second represents the P NLOS components. $K$ is the Rician factor of the channel representing the relative power of the LOS component, $\alpha_{n,i}$ is a unity gain, constant phase factor used to simulate multipath fading, $\omega_i$ is the Doppler frequency shift of the signal, $\phi_{n,i}$ and $\theta_{n,i}$ are the angles of arrival (AoAs) and angles of departure (AoDs) of the signal paths. Taking $c$ as the speed of light, $f_c$ as the frequency of the communications carrier, $v_m$ as the relative velocity of the target, and $T_s$ as symbol period, the Doppler frequency shift is defined as $\omega_i = 2\pi f_cv_mT_s\sin{(\phi_{n,i})}/c$. Using the function $P_U(\psi) = \frac{1}{\sqrt{U}}[1, e^{j\pi\psi}, ... , e^{j\pi\psi(U-1)}]^T$ to generate beamforming vectors, $a_r(\theta_{n,i})$ and $a_r(\phi_{n,i})$ can be defined as $a_t(\theta_{n,i}) = P_{N_{c,t}}(\sin{\theta_{n,i}})$ and $a_r(\phi_{n,i}) = P_{N_{c,r}}(\sin{\phi_{n,i}})$.
 
 In communication, the transmit beamforming vector is calculated by:
-$\mathbf{f}_{n} = \mathbf{P}_{N_{c,t}}(\sin{\theta_{n,0} + e_{t,n}})$
+$f_{n} = P_{N_{c,t}}(\sin{\theta_{n,0} + e_{t,n}})$
 where $e_{t,n}$ represents the error in the angle to the TV measured by the radar system, modelled by $e_{t,n} \sim \mathcal{N}(0, \beta/\gamma_{r,n})$, where $\beta$ is the radar's Rx sensitivity. Error in the distance is not considered, as it is small, and has very little effect on the received signal, whereas due to beamforming of the signal, a small error in angle can result in a large drop in received signal magnitude.
 
 The signal received, combined by the receiver's beamforming vector of 
-$\boldsymbol\omega_{n} = \mathbf{P}_{n_{c,r}}(\sin{\theta_{n,0} + e_{r,n}})$
+$\omega_{n} = P_{n_{c,r}}(\sin{\theta_{n,0} + e_{r,n}})$
 where $e_{r,n}$ uses the same model as $e_{t,n}$ to produce the signal:
-$y_{c,n,k} = \boldsymbol\omega_{n}^H( \sqrt{\frac{p_{c,n}\lambda_c^2}{N_{c,t}(4\pi R_{n})^2}}\mathbf{H}_{c,n,k} \mathbf{f}_{n}s + \mathbf{n}_{n,k} + \mathbf{i}_{n,k})$
-where $s$ is the transmitted signal, and $\mathbf{n}_{n,k}$ represents the instantaneous complex Gaussian noise at the receiver, modelled by $\mathbf{n}_{n,k} \sim \mathcal{CN}(0, \eta_r\mathbf{I}_{N_{c,t}})$. $i$ represents the interference at the receiver, calculated as the sum of contribution from each interferer, modelled by 
-$\mathbf{i}_{n,k} = \Sigma_i\sqrt{\frac{p_{c,n}\lambda_c^2}{N_{c,t}(4\pi R_{i})^2}}\mathbf{H}_{i,n,k} \mathbf{f}_{i,n}$
-where $R_i$ is the distance to the ith interferer, $\mathbf{H}_{i,n,k}$ is the channel matrix of the ith interferer, and $\mathbf{f}_{i,n}$ is the transmit beamforming vector of the ith interferer.
+$y_{c,n,k} = \omega_{n}^H( \sqrt{\frac{p_{c,n}\lambda_c^2}{N_{c,t}(4\pi R_{n})^2}}H_{c,n,k} f_{n}s + n_{n,k} + i_{n,k})$
+where $s$ is the transmitted signal, and $n_{n,k}$ represents the instantaneous complex Gaussian noise at the receiver, modelled by $n_{n,k} \sim \mathcal{CN}(0, \eta_r I_{N_{c,t}})$. $i$ represents the interference at the receiver, calculated as the sum of contribution from each interferer, modelled by 
+$i_{n,k} = \Sigma_i\sqrt{\frac{p_{c,n}\lambda_c^2}{N_{c,t}(4\pi R_{i})^2}}H_{i,n,k} f_{i,n}$
+where $R_i$ is the distance to the ith interferer, $H_{i,n,k}$ is the channel matrix of the ith interferer, and $f_{i,n}$ is the transmit beamforming vector of the ith interferer.
 In addition, the sensed velocity information can be used to compensate for the Doppler shifts caused by the relative velocity of the receiver. This produces the compensated signal:
 $y_{c,n,l,k} = e^{-j2\pi f_c v_m T_s(\sin{\theta_{n,l,0}} + e_{r,n,l})k/c}y_{c,n,l,k}.$
 Which has an SNR of:
-$\gamma_{c,n} = \frac{p_{c,n}\lambda_c^2}{N_{c,t}} \frac{|\boldsymbol\omega_{n}^H \mathbf{H}_{c,n,k}\mathbf{f}_{n}|^2 / (4\pi R_{n})^2}{\eta_c + \Sigma_{i}|\boldsymbol\omega_{n}^H \mathbf{H}_{i,n,k}\mathbf{f}_{i,n}|^2 / (4\pi R_{i})^2}$.
+$\gamma_{c,n} = \frac{p_{c,n}\lambda_c^2}{N_{c,t}} \frac{|\omega_{n}^H H_{c,n,k}f_{n}|^2 / (4\pi R_{n})^2}{\eta_c + \Sigma_{i}|\omega_{n}^H H_{i,n,k}f_{i,n}|^2 / (4\pi R_{i})^2}$.
 Outage for a given link is given by:
 $P_{out,l} = \Pr\{\gamma_{c,n,l} < \gamma_{c,th}\}$
 or can be calculated analytically by:
