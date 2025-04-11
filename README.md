@@ -105,7 +105,7 @@ $R_i = R_{min} + \rho_n(R_u - R_{min}), \rho_n \sim Beta(5, 1)$
 where $R_u$ is the reuse distance and $R_{min}$ is the minimum distance.
 Note: These distances (for the second and third model) are measured to the SV, so the distances to the TV/RV will be these distances plus or minus the link distance.
 
-Different variants of the file v2x.py are in the Power, Dist, Reuse_Dist, and Bandwidth folders, designed to vary and plot those different variables.
+Different variants of the file v2x.py are in the Power, Dist, Reuse_Dist, Bandwidth, and Hops folders, designed to vary and plot those different variables.
 
 # Figures
 Contains the plotted results of the simulations
