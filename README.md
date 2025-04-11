@@ -6,7 +6,7 @@ This project uses python 3.12.6 (64 bit) with the following packages:
 - scipy (version 1.14.1)
 - matplotlib  (version 3.9.2)
 
-Python can be intalled from [here](https://www.python.org/downloads/release/python-3126/).
+Python can be installed from [here](https://www.python.org/downloads/release/python-3126/).
 Packages can be installed from a terminal with the following commands:
 ```
 pip install --force-reinstall -v "numpy==2.1.1"
