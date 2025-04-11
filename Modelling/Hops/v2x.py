@@ -4,7 +4,7 @@ from scipy import constants
 import scipy
 
 # SIM PARAMETERS
-N = 1_000_000 # Num iterations
+N = 250_000 # Num iterations
 L = 1 # Number of links to target
 NUM_CARS = 2 # Total number of cars for radar bounces
 NUM_INTERFERERS = 2 # Total number of interfering cars
@@ -238,7 +238,7 @@ for a in range(NUM_PLOTS):
         #     print("Error: theoretical snr not real")
         # theory[a][d] = (1 - pow(np.e, temp.real))
         sim_outage[a][d] = float(outage_count) / N
-        sim_snr[a][d] = float(snr_total) / N
+        sim_snr[a][d] = float(snr_total) / (N*L)
         sim_pd_t[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / radar_snr_total)
         vru_pd_t[a][d] = pow(np.e, -(radar_snr_th * (N*L)) / vru_snr_total)
         sim_pd[a][d] = 1 - float(radar_outage_count) / (N*L)
@@ -275,9 +275,11 @@ print("PD:\n", sim_pd)
 colours = ["red", "yellow", "blue"]
 names = ["Ideal", "Realistic", "None"]
 
+hops = (np.arange(NUM_POINTS) + 1)
+
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(dists, sim_outage[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
+    plt.plot(hops, sim_outage[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
     # plt.plot(theory[i], comms_powers, 'ko--', label="Theory = "+str(-170 + i*10) , linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Number of Hops")
 plt.ylabel("Outage")
@@ -290,7 +292,7 @@ plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(dists, sim_rate[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
+    plt.plot(hops, sim_rate[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
 plt.xlabel("Number of Hops")
 plt.ylabel("Rate (Mbits/sec)")
 plt.yscale('log')
@@ -303,7 +305,7 @@ plt.grid(True, linestyle='--')
 plot_pd = np.mean(sim_pd, 0)
 
 plt.figure()
-plt.plot(dists, plot_pd, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.plot(hops, plot_pd, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Number of Hops")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
@@ -316,7 +318,7 @@ plt.grid(True, linestyle='--')
 plot_pd_t = np.mean(sim_pd_t, 0)
 
 plt.figure()
-plt.plot(dists, plot_pd_t, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
+plt.plot(hops, plot_pd_t, 'ko-', linewidth=0.5, markerfacecolor="none", markersize=6)
 plt.xlabel("Number of Hops")
 plt.ylabel("Probability of Detection")
 plt.yscale('log')
@@ -328,7 +330,7 @@ plt.grid(True, linestyle='--')
 
 plt.figure()
 for i in range(NUM_PLOTS):
-    plt.plot(dists, sim_se[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
+    plt.plot(hops, sim_se[i], 'ko-', label=names[i], linewidth=0.5, markerfacecolor=colours[i], markersize=6)
 plt.xlabel("Number of Hops")
 plt.ylabel("Spectral Efficiency (Bits/s/Hz)")
 # plt.yscale('log')
